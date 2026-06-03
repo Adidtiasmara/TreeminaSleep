@@ -17,24 +17,25 @@ class ScheduleCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cardColor = isDark ? AppColors.cardDark : AppColors.cardLight;
     final textColor = isDark ? AppColors.textDark : AppColors.textLight;
-    final secondaryColor = isDark
-        ? AppColors.textSecondaryDark
-        : AppColors.textSecondaryLight;
-    final primaryColor = isDark
-        ? AppColors.primaryDark
-        : AppColors.primaryLight;
+    final secondaryColor =
+        isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
+    final primaryColor =
+        isDark ? AppColors.primaryDark : AppColors.primaryLight;
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(16),
+        color: cardColor.withOpacity(isDark ? .9 : 1),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.2 : 0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(isDark ? 0.22 : 0.04),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -58,6 +59,9 @@ class ScheduleCard extends StatelessWidget {
             primaryColor: primaryColor,
             secondaryColor: secondaryColor,
           ),
+          const SizedBox(height: 10),
+          Divider(
+              color: isDark ? AppColors.dividerDark : AppColors.dividerLight),
           const SizedBox(height: 10),
           _buildRow(
             icon: Icons.wb_sunny_outlined,

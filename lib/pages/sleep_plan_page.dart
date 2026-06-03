@@ -4,6 +4,7 @@ import '../models/sleep_schedule_model.dart';
 import '../providers/sleep_provider.dart';
 import '../utils/app_colors.dart';
 import '../widgets/custom_button.dart';
+import '../widgets/sleep_visuals.dart';
 
 class SleepPlanPage extends StatefulWidget {
   const SleepPlanPage({super.key});
@@ -106,16 +107,13 @@ class _SleepPlanPageState extends State<SleepPlanPage> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark
-        ? AppColors.backgroundDark
-        : AppColors.backgroundLight;
+    final bgColor =
+        isDark ? AppColors.backgroundDark : AppColors.backgroundLight;
     final textColor = isDark ? AppColors.textDark : AppColors.textLight;
-    final secondaryColor = isDark
-        ? AppColors.textSecondaryDark
-        : AppColors.textSecondaryLight;
-    final primaryColor = isDark
-        ? AppColors.primaryDark
-        : AppColors.primaryLight;
+    final secondaryColor =
+        isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
+    final primaryColor =
+        isDark ? AppColors.primaryDark : AppColors.primaryLight;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -135,106 +133,103 @@ class _SleepPlanPageState extends State<SleepPlanPage> {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Atur jam target tidur dan bangun\nsesuai rutinitas kamu.',
-              style: TextStyle(
-                color: secondaryColor,
-                fontSize: 14,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 28),
-
-            // Jam Target Tidur
-            _TimePickerCard(
-              icon: Icons.nightlight_round,
-              iconColor: const Color(0xFF7986CB),
-              label: 'Jam Target Tidur',
-              time: _formatTime(_sleepTime),
-              isDark: isDark,
-              onTap: _pickSleepTime,
-              primaryColor: primaryColor,
-              textColor: textColor,
-              secondaryColor: secondaryColor,
-            ),
-            const SizedBox(height: 16),
-
-            // Jam Target Bangun
-            _TimePickerCard(
-              icon: Icons.wb_sunny_outlined,
-              iconColor: const Color(0xFFFFB74D),
-              label: 'Jam Target Bangun',
-              time: _formatTime(_wakeTime),
-              isDark: isDark,
-              onTap: _pickWakeTime,
-              primaryColor: primaryColor,
-              textColor: textColor,
-              secondaryColor: secondaryColor,
-            ),
-            const SizedBox(height: 32),
-
-            // Simpan
-            CustomButton(
-              label: 'Simpan Jadwal',
-              onPressed: _saveSchedule,
-              icon: _saved ? Icons.check_rounded : Icons.save_outlined,
-            ),
-            const SizedBox(height: 20),
-
-            if (_saved)
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: primaryColor.withOpacity(0.3)),
+      body: PageBackdrop(
+        isDark: isDark,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Atur jam target tidur dan bangun\nsesuai rutinitasmu.',
+                style: TextStyle(
+                  color: secondaryColor,
+                  fontSize: 14,
+                  height: 1.5,
                 ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.check_circle_outline,
-                      color: primaryColor,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        'Jadwal tidur disimpan:\n'
-                        'Tidur ${_formatTime(_sleepTime)} • Bangun ${_formatTime(_wakeTime)}',
-                        style: TextStyle(
-                          color: primaryColor,
-                          fontSize: 13,
-                          height: 1.5,
+              ),
+              const SizedBox(height: 28),
+              _WheelTimeCard(
+                icon: Icons.nightlight_round,
+                iconColor: const Color(0xFF7986CB),
+                label: 'Jam Target Tidur',
+                time: _sleepTime,
+                isDark: isDark,
+                onTap: _pickSleepTime,
+                primaryColor: primaryColor,
+                textColor: textColor,
+                secondaryColor: secondaryColor,
+              ),
+              const SizedBox(height: 16),
+              _WheelTimeCard(
+                icon: Icons.wb_sunny_outlined,
+                iconColor: const Color(0xFFFFB74D),
+                label: 'Jam Target Bangun',
+                time: _wakeTime,
+                isDark: isDark,
+                onTap: _pickWakeTime,
+                primaryColor: primaryColor,
+                textColor: textColor,
+                secondaryColor: secondaryColor,
+              ),
+              const SizedBox(height: 32),
+              CustomButton(
+                label: 'Simpan Jadwal',
+                onPressed: _saveSchedule,
+                icon: _saved ? Icons.check_rounded : Icons.save_outlined,
+              ),
+              const SizedBox(height: 20),
+              if (_saved)
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: primaryColor.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.check_circle_outline,
+                        color: primaryColor,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Jadwal tidur disimpan:\n'
+                          'Tidur ${_formatTime(_sleepTime)} • Bangun ${_formatTime(_wakeTime)}',
+                          style: TextStyle(
+                            color: primaryColor,
+                            fontSize: 13,
+                            height: 1.5,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-          ],
+              const SizedBox(height: 24),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _TimePickerCard extends StatelessWidget {
+class _WheelTimeCard extends StatelessWidget {
   final IconData icon;
   final Color iconColor;
   final String label;
-  final String time;
+  final TimeOfDay time;
   final bool isDark;
   final VoidCallback onTap;
   final Color primaryColor;
   final Color textColor;
   final Color secondaryColor;
 
-  const _TimePickerCard({
+  const _WheelTimeCard({
     required this.icon,
     required this.iconColor,
     required this.label,
@@ -249,58 +244,147 @@ class _TimePickerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cardColor = isDark ? AppColors.cardDark : AppColors.cardLight;
+    final hour = time.hour;
+    final minute = time.minute;
 
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
         decoration: BoxDecoration(
-          color: cardColor,
-          borderRadius: BorderRadius.circular(16),
+          color: cardColor.withOpacity(isDark ? .9 : 1),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.2 : 0.06),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+              color: Colors.black.withOpacity(isDark ? 0.22 : 0.04),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: iconColor.withOpacity(0.12),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: iconColor, size: 22),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: TextStyle(color: secondaryColor, fontSize: 13),
+            Row(
+              children: [
+                Icon(icon, color: iconColor, size: 22),
+                const SizedBox(width: 10),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: textColor,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    time,
-                    style: TextStyle(
-                      color: primaryColor,
-                      fontSize: 28,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Container(
+              height: 116,
+              decoration: BoxDecoration(
+                color: isDark
+                    ? Colors.white.withOpacity(.03)
+                    : AppColors.surfaceLight.withOpacity(.55),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _NumberWheel(
+                    value: hour,
+                    min: 0,
+                    max: 23,
+                    primaryColor: primaryColor,
+                    textColor: textColor,
+                    secondaryColor: secondaryColor,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 18),
+                    child: Text(
+                      ':',
+                      style: TextStyle(
+                        color: textColor,
+                        fontSize: 30,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
+                  ),
+                  _NumberWheel(
+                    value: minute,
+                    min: 0,
+                    max: 59,
+                    primaryColor: primaryColor,
+                    textColor: textColor,
+                    secondaryColor: secondaryColor,
                   ),
                 ],
               ),
             ),
-            Icon(Icons.chevron_right_rounded, color: secondaryColor),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _NumberWheel extends StatelessWidget {
+  final int value;
+  final int min;
+  final int max;
+  final Color primaryColor;
+  final Color textColor;
+  final Color secondaryColor;
+
+  const _NumberWheel({
+    required this.value,
+    required this.min,
+    required this.max,
+    required this.primaryColor,
+    required this.textColor,
+    required this.secondaryColor,
+  });
+
+  String _fmt(int v) => v.toString().padLeft(2, '0');
+
+  int _wrap(int v) {
+    if (v < min) return max + 1 + v;
+    if (v > max) return min + v - max - 1;
+    return v;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final values = [-2, -1, 0, 1, 2].map((offset) => _wrap(value + offset));
+
+    return SizedBox(
+      width: 74,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: values.map((item) {
+          final selected = item == value;
+          return Container(
+            height: selected ? 30 : 20,
+            alignment: Alignment.center,
+            decoration: selected
+                ? BoxDecoration(
+                    color: primaryColor.withOpacity(.08),
+                    borderRadius: BorderRadius.circular(8),
+                  )
+                : null,
+            child: Text(
+              _fmt(item),
+              style: TextStyle(
+                color: selected ? textColor : secondaryColor.withOpacity(.68),
+                fontSize: selected ? 22 : 16,
+                fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
+              ),
+            ),
+          );
+        }).toList(),
       ),
     );
   }

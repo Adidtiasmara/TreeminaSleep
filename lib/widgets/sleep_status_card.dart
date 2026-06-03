@@ -45,19 +45,23 @@ class SleepStatusCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = _getColor();
     final cardColor = isDark ? AppColors.cardDark : AppColors.cardLight;
+    final textColor = isDark ? AppColors.textDark : AppColors.textLight;
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.3), width: 1.5),
+        color: cardColor.withOpacity(isDark ? .88 : 1),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color:
+              isDark ? Colors.white.withOpacity(.08) : AppColors.dividerLight,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.2 : 0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(isDark ? 0.24 : 0.05),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -93,8 +97,9 @@ class SleepStatusCard extends StatelessWidget {
                   style: TextStyle(
                     color: isDark
                         ? AppColors.textSecondaryDark
-                        : AppColors.textSecondaryLight,
+                        : textColor.withOpacity(.72),
                     fontSize: 12.5,
+                    height: 1.4,
                   ),
                 ),
               ],

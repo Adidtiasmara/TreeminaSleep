@@ -26,29 +26,37 @@ class _MainPageState extends State<MainPage> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final navBg = isDark ? AppColors.cardDark : AppColors.cardLight;
-    final selectedColor = isDark
-        ? AppColors.primaryDark
-        : AppColors.primaryLight;
-    final unselectedColor = isDark
-        ? AppColors.textSecondaryDark
-        : AppColors.textSecondaryLight;
+    final selectedColor =
+        isDark ? AppColors.primaryDark : AppColors.primaryLight;
+    final unselectedColor =
+        isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
 
     return Scaffold(
       body: IndexedStack(index: _currentIndex, children: _pages),
       bottomNavigationBar: Container(
+        padding: const EdgeInsets.fromLTRB(14, 8, 14, 10),
         decoration: BoxDecoration(
-          color: navBg,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.3 : 0.08),
-              blurRadius: 12,
-              offset: const Offset(0, -3),
-            ),
-          ],
+          color: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
         ),
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+            decoration: BoxDecoration(
+              color: navBg,
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(
+                color: isDark
+                    ? AppColors.dividerDark
+                    : AppColors.dividerLight.withOpacity(.8),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(isDark ? 0.35 : 0.08),
+                  blurRadius: 24,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
@@ -126,29 +134,20 @@ class _NavItem extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              decoration: BoxDecoration(
-                color: isActive
-                    ? selectedColor.withOpacity(0.12)
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                isActive ? activeIcon : icon,
-                color: isActive ? selectedColor : unselectedColor,
-                size: 24,
-              ),
+            Icon(
+              isActive ? activeIcon : icon,
+              color: isActive ? selectedColor : unselectedColor,
+              size: isActive ? 28 : 24,
             ),
-            const SizedBox(height: 2),
-            Text(
-              label,
+            const SizedBox(height: 3),
+            AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 200),
               style: TextStyle(
                 color: isActive ? selectedColor : unselectedColor,
                 fontSize: 11,
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
               ),
+              child: Text(label),
             ),
           ],
         ),

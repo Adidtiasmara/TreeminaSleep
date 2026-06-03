@@ -7,6 +7,7 @@ import '../services/notification_service.dart';
 import '../services/storage_service.dart';
 import '../utils/app_colors.dart';
 import '../widgets/theme_selector.dart';
+import '../widgets/sleep_visuals.dart';
 import 'login_page.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -115,9 +116,8 @@ class _SettingsPageState extends State<SettingsPage> {
             child: Text(
               'Logout',
               style: TextStyle(
-                color: isDark
-                    ? AppColors.badSleepDark
-                    : AppColors.badSleepLight,
+                color:
+                    isDark ? AppColors.badSleepDark : AppColors.badSleepLight,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -140,17 +140,13 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark
-        ? AppColors.backgroundDark
-        : AppColors.backgroundLight;
+    final bgColor =
+        isDark ? AppColors.backgroundDark : AppColors.backgroundLight;
     final textColor = isDark ? AppColors.textDark : AppColors.textLight;
-    final secondaryColor = isDark
-        ? AppColors.textSecondaryDark
-        : AppColors.textSecondaryLight;
-    final cardColor = isDark ? AppColors.cardDark : AppColors.cardLight;
-    final primaryColor = isDark
-        ? AppColors.primaryDark
-        : AppColors.primaryLight;
+    final secondaryColor =
+        isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
+    final primaryColor =
+        isDark ? AppColors.primaryDark : AppColors.primaryLight;
 
     final themeProvider = context.watch<ThemeProvider>();
 
@@ -168,112 +164,16 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── Notifikasi ─────────────────────────────────────────
-            _SectionHeader(label: 'Notifikasi', textColor: textColor),
-            const SizedBox(height: 10),
-            _SettingsCard(
-              isDark: isDark,
-              child: Row(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: primaryColor.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(
-                      Icons.notifications_outlined,
-                      color: primaryColor,
-                      size: 22,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Tampilkan Notifikasi',
-                          style: TextStyle(
-                            color: textColor,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
-                        ),
-                        Text(
-                          'Aktifkan untuk menerima notifikasi\nkualitas tidur setiap hari.',
-                          style: TextStyle(color: secondaryColor, fontSize: 12),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Switch(
-                    value: _notificationEnabled,
-                    onChanged: _toggleNotification,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // ── Tema ───────────────────────────────────────────────
-            _SectionHeader(label: 'Tema Aplikasi', textColor: textColor),
-            const SizedBox(height: 10),
-            ThemeSelector(
-              selected: themeProvider.themeModeString,
-              onChanged: (mode) => themeProvider.setThemeMode(mode),
-              isDark: isDark,
-            ),
-            const SizedBox(height: 20),
-
-            // ── Music ──────────────────────────────────────────────
-            _SectionHeader(label: 'Music', textColor: textColor),
-            const SizedBox(height: 6),
-            Text(
-              'Sound Relaxing',
-              style: TextStyle(
-                color: textColor,
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Pilih sound untuk menemanimu tidur.',
-              style: TextStyle(color: secondaryColor, fontSize: 13),
-            ),
-            const SizedBox(height: 12),
-            ...MusicService.builtInTracks.map(
-              (track) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _MusicTrackTile(
-                  track: track,
-                  isPlaying: _selectedMusic == track['id'],
-                  isDark: isDark,
-                  textColor: textColor,
-                  primaryColor: primaryColor,
-                  cardColor: cardColor,
-                  onPlay: () => _playBuiltIn(track['id']!),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // ── Upload Lagu ────────────────────────────────────────
-            _SectionHeader(label: 'Upload Lagu Sendiri', textColor: textColor),
-            const SizedBox(height: 6),
-            Text(
-              'Unggah lagu dari perangkatmu\nuntuk diputar saat tidur.',
-              style: TextStyle(color: secondaryColor, fontSize: 13),
-            ),
-            const SizedBox(height: 12),
-            if (_customMusicPath.isNotEmpty) ...[
+      body: PageBackdrop(
+        isDark: isDark,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Notifikasi ─────────────────────────────────────────
+              _SectionHeader(label: 'Notifikasi', textColor: textColor),
+              const SizedBox(height: 10),
               _SettingsCard(
                 isDark: isDark,
                 child: Row(
@@ -286,89 +186,217 @@ class _SettingsPageState extends State<SettingsPage> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(
-                        Icons.music_note_outlined,
+                        Icons.notifications_outlined,
                         color: primaryColor,
                         size: 22,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 14),
                     Expanded(
-                      child: Text(
-                        _customMusicPath.split('/').last,
-                        style: TextStyle(
-                          color: textColor,
-                          fontWeight: FontWeight.w500,
-                          fontSize: 13,
-                        ),
-                        overflow: TextOverflow.ellipsis,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Tampilkan Notifikasi',
+                            style: TextStyle(
+                              color: textColor,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                          Text(
+                            'Aktifkan untuk menerima notifikasi\nkualitas tidur setiap hari.',
+                            style:
+                                TextStyle(color: secondaryColor, fontSize: 12),
+                          ),
+                        ],
                       ),
                     ),
-                    IconButton(
-                      onPressed: _toggleCustomMusic,
-                      icon: Icon(
-                        _isPlayingCustom
-                            ? Icons.pause_circle_filled
-                            : Icons.play_circle_fill,
-                        color: primaryColor,
-                        size: 32,
+                    Switch(
+                      value: _notificationEnabled,
+                      onChanged: _toggleNotification,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // ── Tema ───────────────────────────────────────────────
+              _SectionHeader(label: 'Tema Aplikasi', textColor: textColor),
+              const SizedBox(height: 10),
+              ThemeSelector(
+                selected: themeProvider.themeModeString,
+                onChanged: (mode) => themeProvider.setThemeMode(mode),
+                isDark: isDark,
+              ),
+              const SizedBox(height: 20),
+
+              // ── Music ──────────────────────────────────────────────
+              _SettingsCard(
+                isDark: isDark,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _SectionHeader(label: 'Music', textColor: textColor),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Sound Relaxing',
+                      style: TextStyle(
+                        color: textColor,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Pilih sound untuk menemanimu tidur.',
+                      style: TextStyle(color: secondaryColor, fontSize: 13),
+                    ),
+                    const SizedBox(height: 12),
+                    ...MusicService.builtInTracks.map(
+                      (track) => Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: _MusicTrackTile(
+                          track: track,
+                          isPlaying: _selectedMusic == track['id'],
+                          isDark: isDark,
+                          textColor: textColor,
+                          primaryColor: primaryColor,
+                          cardColor: isDark
+                              ? AppColors.surfaceDark
+                              : AppColors.surfaceLight,
+                          onPlay: () => _playBuiltIn(track['id']!),
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 10),
-            ],
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: _uploadLagu,
-                icon: Icon(Icons.upload_file_outlined, color: primaryColor),
-                label: Text(
-                  'Upload Lagu',
-                  style: TextStyle(
-                    color: primaryColor,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  side: BorderSide(color: primaryColor),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
+              const SizedBox(height: 16),
 
-            // ── Logout ─────────────────────────────────────────────
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _logout,
-                icon: const Icon(Icons.logout_rounded, color: Colors.white),
-                label: const Text(
-                  'Logout',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: isDark
-                      ? AppColors.badSleepDark
-                      : AppColors.badSleepLight,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  elevation: 0,
+              // ── Upload Lagu ────────────────────────────────────────
+              _SettingsCard(
+                isDark: isDark,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _SectionHeader(
+                      label: 'Upload Lagu Sendiri',
+                      textColor: textColor,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Unggah lagu dari perangkatmu\nuntuk diputar saat tidur.',
+                      style: TextStyle(color: secondaryColor, fontSize: 13),
+                    ),
+                    const SizedBox(height: 12),
+                    if (_customMusicPath.isNotEmpty) ...[
+                      Row(
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: primaryColor.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              Icons.music_note_outlined,
+                              color: primaryColor,
+                              size: 22,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              _customMusicPath.split('/').last,
+                              style: TextStyle(
+                                color: textColor,
+                                fontWeight: FontWeight.w500,
+                                fontSize: 13,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: _toggleCustomMusic,
+                            icon: Icon(
+                              _isPlayingCustom
+                                  ? Icons.pause_circle_filled
+                                  : Icons.play_circle_fill,
+                              color: primaryColor,
+                              size: 32,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                    ],
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: _uploadLagu,
+                        icon: Icon(
+                          Icons.upload_file_outlined,
+                          color: primaryColor,
+                        ),
+                        label: Text(
+                          'Upload Lagu',
+                          style: TextStyle(
+                            color: primaryColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          side: BorderSide(
+                            color: isDark
+                                ? AppColors.dividerDark
+                                : AppColors.dividerLight,
+                          ),
+                          backgroundColor: isDark
+                              ? Colors.white.withOpacity(.05)
+                              : AppColors.surfaceLight.withOpacity(.55),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
-            const SizedBox(height: 32),
-          ],
+              const SizedBox(height: 24),
+
+              // ── Logout ─────────────────────────────────────────────
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _logout,
+                  icon: const Icon(Icons.logout_rounded, color: Colors.white),
+                  label: const Text(
+                    'Logout',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isDark
+                        ? AppColors.badSleepDark
+                        : AppColors.badSleepLight,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    elevation: 0,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 32),
+            ],
+          ),
         ),
       ),
     );
@@ -406,13 +434,16 @@ class _SettingsCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(16),
+        color: cardColor.withOpacity(isDark ? .9 : 1),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.15 : 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
+            color: Colors.black.withOpacity(isDark ? 0.22 : 0.04),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -455,12 +486,7 @@ class _MusicTrackTile extends StatelessWidget {
                 : (isDark ? AppColors.dividerDark : AppColors.dividerLight),
             width: isPlaying ? 1.5 : 1,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.15 : 0.05),
-              blurRadius: 6,
-            ),
-          ],
+          boxShadow: const [],
         ),
         child: Row(
           children: [
@@ -468,9 +494,8 @@ class _MusicTrackTile extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: isPlaying
-                    ? primaryColor
-                    : primaryColor.withOpacity(0.12),
+                color:
+                    isPlaying ? primaryColor : primaryColor.withOpacity(0.12),
                 shape: BoxShape.circle,
               ),
               child: Icon(

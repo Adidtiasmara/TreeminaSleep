@@ -12,6 +12,7 @@ import '../utils/sleep_calculator.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/schedule_card.dart';
 import '../widgets/sleep_status_card.dart';
+import '../widgets/sleep_visuals.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -161,7 +162,6 @@ class _HomePageState extends State<HomePage> {
     final textColor = isDark ? AppColors.textDark : AppColors.textLight;
     final secondaryColor =
         isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
-    final cardColor = isDark ? AppColors.cardDark : AppColors.cardLight;
 
     return Consumer<SleepProvider>(
       builder: (context, provider, _) {
@@ -171,177 +171,159 @@ class _HomePageState extends State<HomePage> {
 
         return Scaffold(
           backgroundColor: bgColor,
-          body: SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // ── Header ────────────────────────────────────────
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          body: Stack(
+            children: [
+              if (isDark)
+                const Positioned.fill(
+                  bottom: null,
+                  child: SizedBox(
+                    height: 330,
+                    child: NightScape(isDark: true),
+                  ),
+                ),
+              SafeArea(
+                child: SingleChildScrollView(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
+                      // ── Header ────────────────────────────────────────
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Welcome to',
+                                  style: TextStyle(
+                                    color: secondaryColor,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                Text(
+                                  'Treemina Sleep, $_userName 👋',
+                                  style: TextStyle(
+                                    color: textColor,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () {},
+                            icon: Icon(
+                              Icons.notifications_outlined,
+                              color: textColor,
+                              size: 26,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+
+                      if (isDark) ...[
+                        SleepHeroArt(isDark: isDark, awake: !isSleeping),
+                        const SizedBox(height: 10),
+                      ],
+
+                      // ── Status Tidur ──────────────────────────────────
+                      if (lastRecord != null)
+                        SleepStatusCard(
+                          status: lastRecord.status,
+                          message: SleepCalculator.getSleepMessage(
+                            lastRecord.status,
+                          ),
+                          isDark: isDark,
+                        )
+                      else
+                        SleepStatusCard(
+                          status: 'Excellent Sleep',
+                          message:
+                              'Tidurmu cukup nyenyak!\nPertahankan pola tidur yang baik.',
+                          isDark: isDark,
+                        ),
+                      const SizedBox(height: 14),
+
+                      // ── Jadwal Tidur ──────────────────────────────────
+                      ScheduleCard(
+                        sleepTime: schedule.targetSleepTime,
+                        wakeTime: schedule.targetWakeTime,
+                        isDark: isDark,
+                      ),
+                      const SizedBox(height: 14),
+
+                      // ── Sedang Tidur / Start Sleep ────────────────────
+                      if (isSleeping)
+                        _SleepingCard(
+                          elapsed: _elapsed,
+                          sleepStart: provider.sleepStart!,
+                          isDark: isDark,
+                          onWakeUp: () => _onWakeUp(provider),
+                        )
+                      else
+                        _StartSleepCard(
+                          targetSleepTime: schedule.targetSleepTime,
+                          isDark: isDark,
+                          onStartSleep: () => _onStartSleep(provider),
+                        ),
+                      const SizedBox(height: 14),
+
+                      // ── Fun Fact ──────────────────────────────────────
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: primaryColor.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: primaryColor.withOpacity(0.2),
+                            width: 1,
+                          ),
+                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Welcome to',
-                              style: TextStyle(
-                                color: secondaryColor,
-                                fontSize: 14,
-                              ),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.lightbulb_outline,
+                                  color: primaryColor,
+                                  size: 18,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Fun Fact',
+                                  style: TextStyle(
+                                    color: primaryColor,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
                             ),
+                            const SizedBox(height: 8),
                             Text(
-                              'Treemina Sleep, $_userName 👋',
+                              _funFact,
                               style: TextStyle(
-                                color: textColor,
-                                fontSize: 20,
-                                fontWeight: FontWeight.w800,
+                                color: textColor.withOpacity(0.85),
+                                fontSize: 13.5,
+                                height: 1.5,
                               ),
                             ),
                           ],
                         ),
                       ),
-                      IconButton(
-                        onPressed: () {},
-                        icon: Icon(
-                          Icons.notifications_outlined,
-                          color: textColor,
-                          size: 26,
-                        ),
-                      ),
+                      const SizedBox(height: 20),
                     ],
                   ),
-                  const SizedBox(height: 20),
-
-                  // ── Status Tidur ──────────────────────────────────
-                  if (lastRecord != null)
-                    SleepStatusCard(
-                      status: lastRecord.status,
-                      message: SleepCalculator.getSleepMessage(
-                        lastRecord.status,
-                      ),
-                      isDark: isDark,
-                    )
-                  else
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: cardColor,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(
-                              isDark ? 0.2 : 0.06,
-                            ),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: primaryColor.withOpacity(0.12),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.bedtime_rounded,
-                              color: primaryColor,
-                              size: 24,
-                            ),
-                          ),
-                          const SizedBox(width: 14),
-                          Text(
-                            'Belum ada data tidur',
-                            style: TextStyle(
-                              color: secondaryColor,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  const SizedBox(height: 14),
-
-                  // ── Jadwal Tidur ──────────────────────────────────
-                  ScheduleCard(
-                    sleepTime: schedule.targetSleepTime,
-                    wakeTime: schedule.targetWakeTime,
-                    isDark: isDark,
-                  ),
-                  const SizedBox(height: 14),
-
-                  // ── Sedang Tidur / Start Sleep ────────────────────
-                  if (isSleeping)
-                    _SleepingCard(
-                      elapsed: _elapsed,
-                      sleepStart: provider.sleepStart!,
-                      isDark: isDark,
-                      onWakeUp: () => _onWakeUp(provider),
-                    )
-                  else
-                    _StartSleepCard(
-                      targetSleepTime: schedule.targetSleepTime,
-                      isDark: isDark,
-                      onStartSleep: () => _onStartSleep(provider),
-                    ),
-                  const SizedBox(height: 14),
-
-                  // ── Fun Fact ──────────────────────────────────────
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: primaryColor.withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: primaryColor.withOpacity(0.2),
-                        width: 1,
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.lightbulb_outline,
-                              color: primaryColor,
-                              size: 18,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              'Fun Fact',
-                              style: TextStyle(
-                                color: primaryColor,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          _funFact,
-                          style: TextStyle(
-                            color: textColor.withOpacity(0.85),
-                            fontSize: 13.5,
-                            height: 1.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
         );
       },
@@ -366,7 +348,6 @@ class _StartSleepCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final primaryColor =
         isDark ? AppColors.primaryDark : AppColors.primaryLight;
-    final cardColor = isDark ? AppColors.cardDark : AppColors.cardLight;
     final textColor = isDark ? AppColors.textDark : AppColors.textLight;
     final secondaryColor =
         isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
@@ -375,8 +356,13 @@ class _StartSleepCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(16),
+        color: isDark
+            ? AppColors.surfaceDark
+            : AppColors.excellentSleepLight.withOpacity(.14),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(isDark ? 0.2 : 0.06),
@@ -392,16 +378,16 @@ class _StartSleepCard extends StatelessWidget {
             'Siap tidur?',
             style: TextStyle(
               color: textColor,
-              fontWeight: FontWeight.w600,
-              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              fontSize: 16,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
             'Jam target tidur $targetSleepTime',
             style: TextStyle(color: secondaryColor, fontSize: 13),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
           CustomButton(
             label: 'Start Sleep',
             onPressed: onStartSleep,
@@ -436,8 +422,7 @@ class _SleepingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cardColor =
-        isDark ? const Color(0xFF1A3D33) : const Color(0xFF1B4332);
+    final cardColor = isDark ? AppColors.surfaceDark : const Color(0xFF1B4332);
     final badColor = isDark ? AppColors.badSleepDark : AppColors.badSleepLight;
     final textSecondary = isDark ? AppColors.textSecondaryDark : Colors.white70;
 

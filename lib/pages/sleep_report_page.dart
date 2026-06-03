@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../models/sleep_record_model.dart';
 import '../providers/sleep_provider.dart';
 import '../utils/app_colors.dart';
+import '../utils/sleep_calculator.dart';
 import '../widgets/sleep_chart.dart';
 import '../widgets/sleep_record_item.dart';
+import '../widgets/sleep_visuals.dart';
 
 class SleepReportPage extends StatefulWidget {
   const SleepReportPage({super.key});
@@ -44,6 +47,8 @@ class _SleepReportPageState extends State<SleepReportPage>
       builder: (context, provider, _) {
         final allRecords = provider.records;
         final weeklyRecords = provider.getWeeklyRecords();
+        final chartRecords =
+            weeklyRecords.isEmpty ? _previewRecords() : weeklyRecords;
 
         return Scaffold(
           backgroundColor: bgColor,
@@ -69,188 +74,223 @@ class _SleepReportPageState extends State<SleepReportPage>
               ),
             ],
           ),
-          body: allRecords.isEmpty
-              ? _EmptyState(
-                  isDark: isDark,
-                  primaryColor: primaryColor,
-                  textColor: textColor,
-                  secondaryColor: secondaryColor,
-                )
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 22,
-                    vertical: 8,
+          body: PageBackdrop(
+            isDark: isDark,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 22,
+                vertical: 8,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ── Tab Toggle ─────────────────────────────────
+                  Container(
+                    decoration: BoxDecoration(
+                      color: cardColor,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: isDark
+                            ? AppColors.dividerDark
+                            : AppColors.dividerLight,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(
+                            isDark ? 0.15 : 0.05,
+                          ),
+                          blurRadius: 8,
+                        ),
+                      ],
+                    ),
+                    child: TabBar(
+                      controller: _tabController,
+                      indicator: BoxDecoration(
+                        color: primaryColor,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      indicatorSize: TabBarIndicatorSize.tab,
+                      labelColor: Colors.white,
+                      unselectedLabelColor: secondaryColor,
+                      labelStyle: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                      tabs: const [
+                        Tab(text: 'Mingguan'),
+                        Tab(text: 'Bulanan'),
+                      ],
+                    ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  const SizedBox(height: 20),
+
+                  // ── Grafik ─────────────────────────────────────
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: cardColor.withOpacity(isDark ? .9 : 1),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: isDark
+                            ? AppColors.dividerDark
+                            : AppColors.dividerLight,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(
+                            isDark ? 0.15 : 0.05,
+                          ),
+                          blurRadius: 8,
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Durasi Tidur',
+                          style: TextStyle(
+                            color: textColor,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          weeklyRecords.isEmpty
+                              ? '27 Mei - 2 Juni 2024'
+                              : _getDateRange(weeklyRecords),
+                          style: TextStyle(
+                            color: secondaryColor,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          height: 180,
+                          child: SleepChart(
+                            records: chartRecords,
+                            isDark: isDark,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // ── Legend ─────────────────────────────────────
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: cardColor.withOpacity(isDark ? .9 : 1),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isDark
+                            ? AppColors.dividerDark
+                            : AppColors.dividerLight,
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        _LegendItem(
+                          color: isDark
+                              ? AppColors.excellentSleepDark
+                              : AppColors.excellentSleepLight,
+                          label: 'Excellent Sleep (7-8 jam)',
+                          isDark: isDark,
+                          textColor: textColor,
+                        ),
+                        const SizedBox(height: 8),
+                        _LegendItem(
+                          color: isDark
+                              ? AppColors.badSleepDark
+                              : AppColors.badSleepLight,
+                          label: 'Bad Sleep (< 7 jam)',
+                          isDark: isDark,
+                          textColor: textColor,
+                        ),
+                        const SizedBox(height: 8),
+                        _LegendItem(
+                          color: isDark
+                              ? AppColors.overSleepDark
+                              : AppColors.overSleepLight,
+                          label: 'Over Sleep (> 8 jam)',
+                          isDark: isDark,
+                          textColor: textColor,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // ── Riwayat ────────────────────────────────────
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // ── Tab Toggle ─────────────────────────────────
-                      Container(
-                        decoration: BoxDecoration(
-                          color: cardColor,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(
-                                isDark ? 0.15 : 0.05,
-                              ),
-                              blurRadius: 8,
-                            ),
-                          ],
-                        ),
-                        child: TabBar(
-                          controller: _tabController,
-                          indicator: BoxDecoration(
-                            color: primaryColor,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          indicatorSize: TabBarIndicatorSize.tab,
-                          labelColor: Colors.white,
-                          unselectedLabelColor: secondaryColor,
-                          labelStyle: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
-                          tabs: const [
-                            Tab(text: 'Mingguan'),
-                            Tab(text: 'Bulanan'),
-                          ],
+                      Text(
+                        'Riwayat',
+                        style: TextStyle(
+                          color: textColor,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
                         ),
                       ),
-                      const SizedBox(height: 20),
-
-                      // ── Grafik ─────────────────────────────────────
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: cardColor,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(
-                                isDark ? 0.15 : 0.05,
-                              ),
-                              blurRadius: 8,
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Durasi Tidur',
-                              style: TextStyle(
-                                color: textColor,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 15,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              _getDateRange(weeklyRecords),
-                              style: TextStyle(
-                                color: secondaryColor,
-                                fontSize: 12,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            SizedBox(
-                              height: 180,
-                              child: weeklyRecords.isNotEmpty
-                                  ? SleepChart(
-                                      records: weeklyRecords,
-                                      isDark: isDark,
-                                    )
-                                  : Center(
-                                      child: Text(
-                                        'Belum ada data minggu ini',
-                                        style: TextStyle(color: secondaryColor),
-                                      ),
-                                    ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // ── Legend ─────────────────────────────────────
-                      Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: cardColor,
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Column(
-                          children: [
-                            _LegendItem(
-                              color: isDark
-                                  ? AppColors.excellentSleepDark
-                                  : AppColors.excellentSleepLight,
-                              label: 'Excellent Sleep (7-8 jam)',
-                              isDark: isDark,
-                              textColor: textColor,
-                            ),
-                            const SizedBox(height: 8),
-                            _LegendItem(
-                              color: isDark
-                                  ? AppColors.badSleepDark
-                                  : AppColors.badSleepLight,
-                              label: 'Bad Sleep (< 7 jam)',
-                              isDark: isDark,
-                              textColor: textColor,
-                            ),
-                            const SizedBox(height: 8),
-                            _LegendItem(
-                              color: isDark
-                                  ? AppColors.overSleepDark
-                                  : AppColors.overSleepLight,
-                              label: 'Over Sleep (> 8 jam)',
-                              isDark: isDark,
-                              textColor: textColor,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-
-                      // ── Riwayat ────────────────────────────────────
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Riwayat',
+                      if (allRecords.length > 5)
+                        GestureDetector(
+                          onTap: () {},
+                          child: Text(
+                            'Lihat Semua',
                             style: TextStyle(
-                              color: textColor,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16,
+                              color: primaryColor,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
                             ),
                           ),
-                          if (allRecords.length > 5)
-                            GestureDetector(
-                              onTap: () {},
-                              child: Text(
-                                'Lihat Semua',
-                                style: TextStyle(
-                                  color: primaryColor,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      ...allRecords.take(10).map(
-                            (record) =>
-                                SleepRecordItem(record: record, isDark: isDark),
-                          ),
-                      const SizedBox(height: 20),
+                        ),
                     ],
                   ),
-                ),
+                  const SizedBox(height: 10),
+                  if (allRecords.isEmpty)
+                    ...chartRecords.reversed.take(4).map(
+                          (record) => SleepRecordItem(
+                            record: record,
+                            isDark: isDark,
+                          ),
+                        )
+                  else
+                    ...allRecords.take(10).map(
+                          (record) => SleepRecordItem(
+                            record: record,
+                            isDark: isDark,
+                          ),
+                        ),
+                  if (allRecords.isEmpty) SleepyBottomArt(isDark: isDark),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            ),
+          ),
         );
       },
     );
+  }
+
+  List<SleepRecord> _previewRecords() {
+    final base = DateTime(2024, 6, 1, 22);
+    final durations = [420, 390, 510, 535, 370, 490, 460];
+    return List.generate(durations.length, (index) {
+      final start = base.add(Duration(days: index - durations.length + 1));
+      final duration = durations[index];
+      final status = SleepCalculator.getSleepStatus(duration);
+      return SleepRecord(
+        id: 'preview-$index',
+        date: start,
+        sleepStart: start,
+        wakeUp: start.add(Duration(minutes: duration)),
+        durationMinutes: duration,
+        status: status,
+      );
+    });
   }
 
   String _getDateRange(List records) {
@@ -302,66 +342,6 @@ class _LegendItem extends StatelessWidget {
         const SizedBox(width: 10),
         Text(label, style: TextStyle(color: textColor, fontSize: 13)),
       ],
-    );
-  }
-}
-
-class _EmptyState extends StatelessWidget {
-  final bool isDark;
-  final Color primaryColor;
-  final Color textColor;
-  final Color secondaryColor;
-
-  const _EmptyState({
-    required this.isDark,
-    required this.primaryColor,
-    required this.textColor,
-    required this.secondaryColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: primaryColor.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.bedtime_outlined,
-                color: primaryColor,
-                size: 40,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Belum ada data tidur',
-              style: TextStyle(
-                color: textColor,
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Mulai tidur dari halaman Home\nuntuk melihat laporan di sini.',
-              style: TextStyle(
-                color: secondaryColor,
-                fontSize: 14,
-                height: 1.5,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
