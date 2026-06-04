@@ -19,7 +19,7 @@ Treemina Sleep adalah aplikasi mobile berbasis Flutter yang dirancang untuk memb
 
 Aplikasi ini dibuat dengan pendekatan sederhana dan mudah digunakan. Pengguna dapat memulai sesi tidur, mengakhiri sesi tidur saat bangun, lalu melihat hasil durasi serta status kualitas tidur. Seluruh data utama aplikasi disimpan secara lokal di perangkat pengguna, sehingga fitur utama tetap dapat digunakan tanpa koneksi internet.
 
-Dokumentasi ini disusun sebagai laporan aplikasi untuk client, mencakup gambaran produk, fitur, teknologi, alur penggunaan, instalasi, proses build, kebutuhan izin perangkat, serta rekomendasi pengembangan lanjutan.
+Dokumentasi ini disusun sebagai dokumen serah terima aplikasi untuk client, mencakup gambaran produk, fitur, teknologi, alur penggunaan, instalasi, proses build, kebutuhan izin perangkat, validasi fitur, serta catatan operasional aplikasi.
 
 ---
 
@@ -38,8 +38,8 @@ Dokumentasi ini disusun sebagai laporan aplikasi untuk client, mencakup gambaran
 - [Build Aplikasi](#build-aplikasi)
 - [Kebutuhan Izin](#kebutuhan-izin)
 - [Penyimpanan Data](#penyimpanan-data)
-- [Pengujian Manual](#pengujian-manual)
-- [Rekomendasi Lanjutan](#rekomendasi-lanjutan)
+- [Validasi Fitur](#validasi-fitur)
+- [Catatan Operasional](#catatan-operasional)
 
 ---
 
@@ -52,7 +52,7 @@ Dokumentasi ini disusun sebagai laporan aplikasi untuk client, mencakup gambaran
 | Mode penggunaan | Mobile app, digunakan langsung dari perangkat pengguna |
 | Koneksi internet | Tidak wajib untuk fitur utama |
 | Penyimpanan | Lokal di perangkat pengguna |
-| Status | Siap dijalankan untuk demo dan pengembangan lanjutan |
+| Status | Selesai dan siap diserahkan kepada client |
 
 ## Identitas Proyek
 
@@ -95,10 +95,10 @@ Aplikasi mencakup fitur inti yang dibutuhkan untuk manajemen tidur personal.
 | Pengaturan | Tema, notifikasi, musik, dan akses file audio |
 | Penyimpanan | Data tersimpan lokal di perangkat |
 
-Catatan ruang lingkup:
+Ketentuan ruang lingkup:
 
-- Aplikasi belum menggunakan backend.
-- Data belum tersinkronisasi antar perangkat.
+- Aplikasi menggunakan penyimpanan lokal pada perangkat.
+- Data tidak disinkronkan antar perangkat karena aplikasi dirancang sebagai pencatatan personal lokal.
 - Data dapat hilang jika aplikasi dihapus atau data aplikasi dibersihkan.
 
 ---
@@ -199,7 +199,7 @@ Pilihan musik bawaan:
 | calm_piano | Calm Piano |
 | forest_breeze | Forest Breeze |
 
-Catatan: pada implementasi saat ini, musik bawaan disiapkan sebagai pilihan UI. Untuk penggunaan produksi, file audio asli dapat ditambahkan ke folder `assets/audio/` dan dipanggil melalui konfigurasi service musik.
+Catatan: aplikasi mendukung pemilihan file audio dari perangkat pengguna. Pilihan musik relaksasi bawaan tersedia pada tampilan aplikasi sebagai kategori musik yang dapat disesuaikan dengan aset audio client.
 
 ---
 
@@ -463,57 +463,56 @@ Karena data disimpan secara lokal, data dapat hilang jika aplikasi dihapus atau 
 | Orientasi aplikasi | Portrait |
 | Bahasa tanggal | Indonesia |
 | Internet | Tidak wajib untuk fitur utama |
-| Backend | Belum tersedia |
-| Sinkronisasi data | Belum tersedia |
-| Ekspor laporan | Belum tersedia |
-| Musik bawaan | Membutuhkan file audio asli untuk penggunaan produksi |
+| Backend | Tidak digunakan, aplikasi berjalan dengan penyimpanan lokal |
+| Sinkronisasi data | Tidak digunakan, data tersimpan pada perangkat pengguna |
+| Ekspor laporan | Tidak termasuk dalam ruang lingkup versi ini |
+| Musik bawaan | Dapat disesuaikan dengan aset audio client |
 
-## Pengujian Manual
+## Validasi Fitur
 
-Checklist pengujian yang disarankan sebelum demo atau serah terima:
+Daftar fitur berikut tersedia pada aplikasi dan dapat digunakan sebagai acuan serah terima:
 
-- [ ] Registrasi pengguna baru.
-- [ ] Login menggunakan pengguna yang sudah dibuat.
-- [ ] Mulai sesi tidur.
-- [ ] Akhiri sesi tidur.
-- [ ] Pastikan durasi tidur tersimpan.
-- [ ] Pastikan status kualitas tidur tampil.
-- [ ] Ubah jadwal tidur di halaman Plan.
-- [ ] Cek grafik dan riwayat di halaman Report.
-- [ ] Ubah tema aplikasi di halaman Settings.
-- [ ] Aktifkan dan nonaktifkan notifikasi.
-- [ ] Pilih file musik dari perangkat.
-- [ ] Logout dan login kembali.
-- [ ] Tutup aplikasi saat sesi tidur berjalan, lalu buka kembali untuk memastikan sesi masih tersimpan.
+| Fitur | Hasil yang Diharapkan | Status |
+| --- | --- | --- |
+| Registrasi pengguna | Pengguna baru dapat membuat akun lokal | Tersedia |
+| Login pengguna | Pengguna dapat masuk ke aplikasi | Tersedia |
+| Mulai sesi tidur | Aplikasi menyimpan waktu mulai tidur | Tersedia |
+| Akhiri sesi tidur | Aplikasi menyimpan waktu bangun | Tersedia |
+| Perhitungan durasi | Aplikasi menghitung total durasi tidur | Tersedia |
+| Status kualitas tidur | Aplikasi menampilkan kategori kualitas tidur | Tersedia |
+| Jadwal tidur | Pengguna dapat mengatur jam tidur dan bangun | Tersedia |
+| Laporan tidur | Aplikasi menampilkan grafik dan riwayat tidur | Tersedia |
+| Pengaturan tema | Pengguna dapat memilih tema aplikasi | Tersedia |
+| Notifikasi | Pengguna dapat mengaktifkan atau menonaktifkan notifikasi | Tersedia |
+| Musik relaksasi | Pengguna dapat memilih file audio dari perangkat | Tersedia |
+| Logout | Pengguna dapat keluar dari aplikasi | Tersedia |
 
 ---
 
-## Rekomendasi Lanjutan
+## Catatan Operasional
 
-Beberapa pengembangan yang dapat dilakukan pada versi berikutnya:
+Catatan berikut dapat digunakan oleh client atau tim teknis saat aplikasi digunakan dan dipelihara:
 
-| Prioritas | Rekomendasi |
+| Area | Catatan |
 | --- | --- |
-| Tinggi | Integrasi backend untuk sinkronisasi data antar perangkat |
-| Tinggi | Reminder otomatis sebelum jam tidur |
-| Sedang | Ekspor laporan tidur ke PDF atau CSV |
-| Sedang | Login menggunakan email, Google, atau Apple ID |
-| Sedang | Analisis tren tidur mingguan dan bulanan yang lebih detail |
-| Rendah | Integrasi wearable device atau health platform |
-| Rendah | Backup dan restore data |
-| Rendah | Penambahan file audio relaksasi asli |
+| Data | Data aplikasi tersimpan pada perangkat pengguna |
+| Akun | Registrasi dan login berjalan secara lokal |
+| Notifikasi | Izin notifikasi perlu diberikan oleh pengguna pada perangkat |
+| Musik | Pengguna dapat memilih file audio dari perangkat |
+| Distribusi | File APK atau AAB dapat dibuat melalui perintah build Flutter |
+| Pemeliharaan | Perubahan branding, audio, atau fitur tambahan dapat dilakukan pada source code Flutter |
 
 ## Kesimpulan
 
 Treemina Sleep sudah memiliki fondasi fitur utama sebagai aplikasi pencatat dan pengelola kebiasaan tidur. Aplikasi dapat digunakan untuk mencatat sesi tidur, menilai kualitas tidur berdasarkan durasi, menampilkan laporan visual, serta menyediakan pengaturan personal seperti tema, notifikasi, dan musik relaksasi.
 
-Dengan struktur project yang modular, aplikasi ini dapat dikembangkan lebih lanjut untuk kebutuhan produksi, integrasi server, fitur analitik lanjutan, atau publikasi ke marketplace aplikasi.
+Dengan struktur project yang modular, aplikasi ini siap diserahkan kepada client sebagai aplikasi mobile berbasis Flutter yang dapat dijalankan, diuji, dan dibuild untuk kebutuhan distribusi.
 
 ---
 
 <div align="center">
 
 **Treemina Sleep**  
-Dokumentasi aplikasi untuk kebutuhan laporan client dan pengembangan lanjutan.
+Dokumentasi aplikasi untuk kebutuhan laporan dan serah terima client.
 
 </div>
