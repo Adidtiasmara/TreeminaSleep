@@ -14,6 +14,7 @@ import '../widgets/custom_button.dart';
 import '../widgets/schedule_card.dart';
 import '../widgets/sleep_status_card.dart';
 import '../widgets/sleep_visuals.dart';
+import 'notifications_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -24,26 +25,79 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   Timer? _timer;
+  Timer? _funFactTimer;
   Duration _elapsed = Duration.zero;
   String _userName = '';
-  late String _funFact;
+  late int _funFactIndex;
 
-  static const List<String> _funFacts = [
-    'Tidur cukup dapat membantu meningkatkan fokus dan suasana hati.',
-    'Tidur yang berkualitas membantu tubuh melakukan pemulihan sel.',
-    'Kurang tidur dapat membuat konsentrasi menurun hingga 30%.',
-    'Orang dewasa membutuhkan 7–9 jam tidur setiap malam.',
-    'Tidur yang baik membantu mengatur emosi dan mengurangi stres.',
-    'Mimpi terjadi selama fase REM, sekitar 2 jam per malam.',
-    'Tubuh melepaskan hormon pertumbuhan saat tidur nyenyak.',
-    'Tidur teratur membantu menjaga berat badan yang sehat.',
+  static const List<_FunFactData> _funFacts = [
+    _FunFactData(
+      titlePrefix: 'Tidur:',
+      title: 'Kunci Kesehatan Otak',
+      leftTitle: 'Mode Performa',
+      leftSubtitle: 'Aktif & Produktif',
+      rightTitle: 'Mode Pemeliharaan',
+      rightSubtitle: 'Pemulihan & Perbaikan',
+      description:
+          'Saat tidur, tubuh beralih dari aktivitas harian menuju proses perbaikan yang membantu otak dan tubuh pulih.',
+      bullets: [
+        'Tidur nyenyak mendukung proses pemulihan otak.',
+        'Kurang tidur dapat menurunkan fokus dan stabilitas emosi.',
+      ],
+    ),
+    _FunFactData(
+      titlePrefix: 'Glimfatik:',
+      title: 'Sistem Pembersihan Otak',
+      leftTitle: 'Sisa Metabolik',
+      leftSubtitle: 'Menumpuk saat aktif',
+      rightTitle: 'Jalur Bersih',
+      rightSubtitle: 'Aktif saat tidur',
+      description:
+          'Ketika tidur nyenyak, otak lebih aktif membuang limbah metabolik sehingga terasa lebih segar saat bangun.',
+      bullets: [
+        'Tidur cukup membantu otak melakukan perawatan alami.',
+        'Jadwal tidur teratur mendukung ritme biologis tubuh.',
+      ],
+    ),
+    _FunFactData(
+      titlePrefix: 'REM:',
+      title: 'Fase Mimpi dan Emosi',
+      leftTitle: 'Memori',
+      leftSubtitle: 'Diproses ulang',
+      rightTitle: 'Emosi',
+      rightSubtitle: 'Lebih stabil',
+      description:
+          'Fase REM berperan dalam pemrosesan memori, emosi, dan mimpi yang biasanya muncul menjelang akhir siklus tidur.',
+      bullets: [
+        'Kualitas tidur memengaruhi mood setelah bangun.',
+        'Tidur terpotong dapat mengganggu siklus REM.',
+      ],
+    ),
+    _FunFactData(
+      titlePrefix: 'Ritme:',
+      title: 'Jam Biologis Tubuh',
+      leftTitle: 'Malam',
+      leftSubtitle: 'Tubuh melambat',
+      rightTitle: 'Pagi',
+      rightSubtitle: 'Energi naik',
+      description:
+          'Tidur dan bangun di jam yang konsisten membantu tubuh mengenali kapan harus istirahat dan kapan siap aktif.',
+      bullets: [
+        'Konsistensi jadwal sering lebih penting daripada tidur sangat larut.',
+        'Cahaya pagi membantu tubuh mengatur ritme harian.',
+      ],
+    ),
   ];
 
   @override
   void initState() {
     super.initState();
     _loadUserName();
-    _funFact = _funFacts[Random().nextInt(_funFacts.length)];
+    _funFactIndex = Random().nextInt(_funFacts.length);
+    _funFactTimer = Timer.periodic(const Duration(seconds: 14), (_) {
+      if (!mounted) return;
+      setState(() => _funFactIndex = (_funFactIndex + 1) % _funFacts.length);
+    });
     final provider = context.read<SleepProvider>();
     if (provider.isSleeping && provider.sleepStart != null) {
       _startTimer(provider.sleepStart!);
@@ -75,6 +129,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void dispose() {
     _timer?.cancel();
+    _funFactTimer?.cancel();
     super.dispose();
   }
 
@@ -219,7 +274,13 @@ class _HomePageState extends State<HomePage> {
                             ),
                           ),
                           IconButton(
-                            onPressed: () {},
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const NotificationsPage(),
+                                ),
+                              );
+                            },
                             icon: Icon(
                               Icons.notifications_outlined,
                               color: textColor,
@@ -279,7 +340,7 @@ class _HomePageState extends State<HomePage> {
                       const SizedBox(height: 14),
 
                       _FunFactHighlight(
-                        fact: _funFact,
+                        fact: _funFacts[_funFactIndex],
                         isDark: isDark,
                         primaryColor: primaryColor,
                         textColor: textColor,
@@ -367,8 +428,30 @@ class _StartSleepCard extends StatelessWidget {
   }
 }
 
+class _FunFactData {
+  final String titlePrefix;
+  final String title;
+  final String leftTitle;
+  final String leftSubtitle;
+  final String rightTitle;
+  final String rightSubtitle;
+  final String description;
+  final List<String> bullets;
+
+  const _FunFactData({
+    required this.titlePrefix,
+    required this.title,
+    required this.leftTitle,
+    required this.leftSubtitle,
+    required this.rightTitle,
+    required this.rightSubtitle,
+    required this.description,
+    required this.bullets,
+  });
+}
+
 class _FunFactHighlight extends StatelessWidget {
-  final String fact;
+  final _FunFactData fact;
   final bool isDark;
   final Color primaryColor;
   final Color textColor;
@@ -387,126 +470,127 @@ class _FunFactHighlight extends StatelessWidget {
     final cardColor = isDark ? AppColors.cardDark : AppColors.cardLight;
     final blue = isDark ? const Color(0xFF8DB7FF) : const Color(0xFF075B9D);
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 15),
-      decoration: BoxDecoration(
-        color: cardColor.withOpacity(isDark ? .92 : 1),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 450),
+      child: Container(
+        key: ValueKey(fact.title),
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 15),
+        decoration: BoxDecoration(
+          color: cardColor.withOpacity(isDark ? .92 : 1),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? .22 : .05),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
+            ),
+          ],
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDark ? .22 : .05),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: primaryColor.withOpacity(.13),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.psychology_alt_outlined,
-                  color: primaryColor,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Text(
-                'Fun Fact',
-                style: TextStyle(
-                  color: primaryColor,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 14,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          RichText(
-            text: TextSpan(
-              style: TextStyle(
-                color: textColor,
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-                height: 1.14,
-              ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                TextSpan(
-                  text: 'Tidur: ',
-                  style: TextStyle(color: blue),
+                Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: primaryColor.withOpacity(.13),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.psychology_alt_outlined,
+                    color: primaryColor,
+                    size: 20,
+                  ),
                 ),
-                const TextSpan(text: 'Kunci Kesehatan Otak'),
+                const SizedBox(width: 10),
+                Text(
+                  'Fun Fact',
+                  style: TextStyle(
+                    color: primaryColor,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14,
+                  ),
+                ),
               ],
             ),
-          ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(
-                child: _ModePill(
-                  title: 'Mode Performa',
-                  subtitle: 'Aktif & Produktif',
-                  color: isDark
-                      ? const Color(0xFF5D6BA8)
-                      : const Color(0xFFEEC0D7),
-                  textColor: textColor,
+            const SizedBox(height: 12),
+            RichText(
+              text: TextSpan(
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  height: 1.14,
                 ),
+                children: [
+                  TextSpan(
+                    text: '${fact.titlePrefix} ',
+                    style: TextStyle(color: blue),
+                  ),
+                  TextSpan(text: fact.title),
+                ],
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Icon(
-                  Icons.arrow_forward_rounded,
-                  color: secondaryColor,
-                  size: 18,
-                ),
-              ),
-              Expanded(
-                child: _ModePill(
-                  title: 'Mode Pemeliharaan',
-                  subtitle: 'Pemulihan & Perbaikan',
-                  color: isDark
-                      ? const Color(0xFF356D82)
-                      : const Color(0xFFC9EEF0),
-                  textColor: textColor,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Text(
-            fact,
-            style: TextStyle(
-              color: textColor.withOpacity(.88),
-              fontSize: 13.2,
-              height: 1.45,
-              fontWeight: FontWeight.w500,
             ),
-          ),
-          const SizedBox(height: 8),
-          _FactBullet(
-            text: 'Saat tidur nyenyak, otak mendukung proses pemulihan.',
-            color: primaryColor,
-            textColor: secondaryColor,
-          ),
-          const SizedBox(height: 5),
-          _FactBullet(
-            text: 'Kurang tidur dapat menurunkan fokus dan stabilitas emosi.',
-            color: primaryColor,
-            textColor: secondaryColor,
-          ),
-        ],
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: _ModePill(
+                    title: fact.leftTitle,
+                    subtitle: fact.leftSubtitle,
+                    color: isDark
+                        ? const Color(0xFF5D6BA8)
+                        : const Color(0xFFEEC0D7),
+                    textColor: textColor,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Icon(
+                    Icons.arrow_forward_rounded,
+                    color: secondaryColor,
+                    size: 18,
+                  ),
+                ),
+                Expanded(
+                  child: _ModePill(
+                    title: fact.rightTitle,
+                    subtitle: fact.rightSubtitle,
+                    color: isDark
+                        ? const Color(0xFF356D82)
+                        : const Color(0xFFC9EEF0),
+                    textColor: textColor,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Text(
+              fact.description,
+              style: TextStyle(
+                color: textColor.withOpacity(.88),
+                fontSize: 13.2,
+                height: 1.45,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 8),
+            for (final bullet in fact.bullets) ...[
+              _FactBullet(
+                text: bullet,
+                color: primaryColor,
+                textColor: secondaryColor,
+              ),
+              const SizedBox(height: 5),
+            ],
+          ],
+        ),
       ),
     );
   }

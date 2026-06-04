@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -193,29 +194,42 @@ class SupabaseService {
     await client.from('active_sleep_sessions').delete().eq('user_id', userId);
   }
 
-  static Future<UploadedMusic?> getCustomMusic() async {
+  static Future<List<UploadedMusic>> getCustomMusicTracks() async {
     final userId = _requireUserId();
-    final row = await client
+    final rows = await client
         .from('user_music_tracks')
-        .select('file_name, public_url')
+        .select('id, file_name, storage_path, public_url')
         .eq('user_id', userId)
-        .maybeSingle();
+        .order('created_at', ascending: false);
 
-    if (row == null) return null;
-    return UploadedMusic(
-      fileName: row['file_name']?.toString() ?? 'Lagu sendiri',
-      url: row['public_url']?.toString() ?? '',
-    );
+    return rows
+        .map(
+          (row) => UploadedMusic(
+            id: row['id']?.toString() ?? '',
+            fileName: row['file_name']?.toString() ?? 'Lagu sendiri',
+            storagePath: row['storage_path']?.toString() ?? '',
+            url: row['public_url']?.toString() ?? '',
+          ),
+        )
+        .toList();
   }
 
   static Future<UploadedMusic> uploadCustomMusic(String filePath) async {
-    final userId = _requireUserId();
     final file = File(filePath);
     final fileName = file.path.split('/').last;
+    final bytes = await file.readAsBytes();
+
+    return uploadCustomMusicBytes(bytes: bytes, fileName: fileName);
+  }
+
+  static Future<UploadedMusic> uploadCustomMusicBytes({
+    required Uint8List bytes,
+    required String fileName,
+  }) async {
+    final userId = _requireUserId();
     final extension = fileName.contains('.') ? fileName.split('.').last : 'mp3';
     final storagePath =
         '$userId/custom_${DateTime.now().millisecondsSinceEpoch}.$extension';
-    final bytes = await file.readAsBytes();
 
     await client.storage.from('sleep-music').uploadBinary(
           storagePath,
@@ -229,14 +243,36 @@ class SupabaseService {
     final publicUrl =
         client.storage.from('sleep-music').getPublicUrl(storagePath);
 
-    await client.from('user_music_tracks').upsert({
-      'user_id': userId,
-      'file_name': fileName,
-      'storage_path': storagePath,
-      'public_url': publicUrl,
-    });
+    final row = await client
+        .from('user_music_tracks')
+        .insert({
+          'user_id': userId,
+          'file_name': fileName,
+          'storage_path': storagePath,
+          'public_url': publicUrl,
+        })
+        .select('id, file_name, storage_path, public_url')
+        .single();
 
-    return UploadedMusic(fileName: fileName, url: publicUrl);
+    return UploadedMusic(
+      id: row['id']?.toString() ?? '',
+      fileName: row['file_name']?.toString() ?? fileName,
+      storagePath: row['storage_path']?.toString() ?? storagePath,
+      url: row['public_url']?.toString() ?? publicUrl,
+    );
+  }
+
+  static Future<void> deleteCustomMusic(UploadedMusic music) async {
+    final userId = _requireUserId();
+    await client
+        .from('user_music_tracks')
+        .delete()
+        .eq('id', music.id)
+        .eq('user_id', userId);
+
+    if (music.storagePath.isNotEmpty) {
+      await client.storage.from('sleep-music').remove([music.storagePath]);
+    }
   }
 
   static String _audioContentType(String extension) {
@@ -264,8 +300,15 @@ class SupabaseService {
 }
 
 class UploadedMusic {
+  final String id;
   final String fileName;
+  final String storagePath;
   final String url;
 
-  const UploadedMusic({required this.fileName, required this.url});
+  const UploadedMusic({
+    required this.id,
+    required this.fileName,
+    required this.storagePath,
+    required this.url,
+  });
 }

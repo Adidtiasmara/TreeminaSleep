@@ -1,3 +1,5 @@
+create extension if not exists pgcrypto;
+
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   name text not null,
@@ -37,7 +39,8 @@ create table if not exists public.active_sleep_sessions (
 );
 
 create table if not exists public.user_music_tracks (
-  user_id uuid primary key references auth.users(id) on delete cascade,
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
   file_name text not null,
   storage_path text not null,
   public_url text not null,
@@ -45,9 +48,32 @@ create table if not exists public.user_music_tracks (
   updated_at timestamptz not null default now()
 );
 
+alter table public.user_music_tracks
+add column if not exists id uuid;
+
+update public.user_music_tracks
+set id = gen_random_uuid()
+where id is null;
+
+alter table public.user_music_tracks
+alter column id set default gen_random_uuid();
+
+alter table public.user_music_tracks
+alter column id set not null;
+
+alter table public.user_music_tracks
+drop constraint if exists user_music_tracks_pkey;
+
+alter table public.user_music_tracks
+add constraint user_music_tracks_pkey primary key (id);
+
 insert into storage.buckets (id, name, public)
 values ('sleep-music', 'sleep-music', true)
 on conflict (id) do nothing;
+
+update storage.buckets
+set public = true
+where id = 'sleep-music';
 
 create or replace function public.set_updated_at()
 returns trigger as $$
@@ -186,3 +212,6 @@ using (
 
 create index if not exists sleep_records_user_date_idx
 on public.sleep_records (user_id, record_date desc);
+
+create index if not exists user_music_tracks_user_created_idx
+on public.user_music_tracks (user_id, created_at desc);

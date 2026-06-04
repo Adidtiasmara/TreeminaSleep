@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../providers/profile_provider.dart';
 import '../services/supabase_service.dart';
 import '../utils/app_colors.dart';
 import '../widgets/custom_button.dart';
@@ -64,6 +66,8 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
+    if (!mounted) return;
+    await context.read<ProfileProvider>().loadAge();
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const MainPage()),

@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/sleep_schedule_model.dart';
+import '../providers/profile_provider.dart';
 import '../providers/sleep_provider.dart';
-import '../services/storage_service.dart';
-import '../services/supabase_service.dart';
 import '../utils/app_colors.dart';
 import '../utils/sleep_calculator.dart';
 import '../widgets/custom_button.dart';
@@ -20,21 +19,11 @@ class _SleepPlanPageState extends State<SleepPlanPage> {
   TimeOfDay _sleepTime = const TimeOfDay(hour: 22, minute: 0);
   TimeOfDay _wakeTime = const TimeOfDay(hour: 5, minute: 30);
   bool _saved = false;
-  int? _age;
 
   @override
   void initState() {
     super.initState();
     _loadFromProvider();
-    _loadAge();
-  }
-
-  Future<void> _loadAge() async {
-    final age = SupabaseService.isConfigured && SupabaseService.isLoggedIn
-        ? await SupabaseService.getAge()
-        : StorageService.getAge();
-    if (!mounted) return;
-    setState(() => _age = age);
   }
 
   void _loadFromProvider() {
@@ -98,7 +87,10 @@ class _SleepPlanPageState extends State<SleepPlanPage> {
   }
 
   Future<void> _editAge() async {
-    final controller = TextEditingController(text: _age?.toString() ?? '');
+    final profileProvider = context.read<ProfileProvider>();
+    final controller = TextEditingController(
+      text: profileProvider.age?.toString() ?? '',
+    );
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final pickedAge = await showDialog<int>(
       context: context,
@@ -140,13 +132,7 @@ class _SleepPlanPageState extends State<SleepPlanPage> {
     controller.dispose();
 
     if (pickedAge == null) return;
-    if (SupabaseService.isConfigured && SupabaseService.isLoggedIn) {
-      await SupabaseService.updateAge(pickedAge);
-    } else {
-      await StorageService.setAge(pickedAge);
-    }
-    if (!mounted) return;
-    setState(() => _age = pickedAge);
+    await profileProvider.updateAge(pickedAge);
   }
 
   Future<void> _saveSchedule() async {
@@ -179,6 +165,7 @@ class _SleepPlanPageState extends State<SleepPlanPage> {
         isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
     final primaryColor =
         isDark ? AppColors.primaryDark : AppColors.primaryLight;
+    final age = context.watch<ProfileProvider>().age;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -215,7 +202,7 @@ class _SleepPlanPageState extends State<SleepPlanPage> {
               ),
               const SizedBox(height: 20),
               _AgeRecommendationCard(
-                age: _age,
+                age: age,
                 isDark: isDark,
                 primaryColor: primaryColor,
                 textColor: textColor,
