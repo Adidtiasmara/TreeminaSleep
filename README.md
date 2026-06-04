@@ -1,136 +1,519 @@
+<div align="center">
+
 # Treemina Sleep
 
-Treemina Sleep adalah aplikasi Flutter untuk membantu pengguna memantau kebiasaan tidur, mengatur jadwal tidur, melihat laporan durasi tidur, dan menyesuaikan pengalaman aplikasi melalui tema, notifikasi, serta musik relaksasi.
+**Aplikasi mobile untuk mencatat, mengelola, dan memantau kualitas tidur pengguna.**
 
-Aplikasi ini menyimpan data secara lokal di perangkat, sehingga pengguna dapat mencatat sesi tidur tanpa membutuhkan server eksternal.
+![Flutter](https://img.shields.io/badge/Flutter-Mobile_App-02569B?style=for-the-badge&logo=flutter&logoColor=white)
+![Dart](https://img.shields.io/badge/Dart-Programming-0175C2?style=for-the-badge&logo=dart&logoColor=white)
+![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20iOS-34A853?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-1.0.0%2B1-6C63FF?style=for-the-badge)
 
-## Fitur Utama
+</div>
 
-- Registrasi dan login pengguna lokal.
-- Pencatatan sesi tidur dengan tombol mulai tidur dan bangun.
-- Perhitungan durasi tidur otomatis.
-- Status kualitas tidur berdasarkan durasi tidur.
-- Pengaturan target jam tidur dan jam bangun.
-- Grafik laporan tidur mingguan dan bulanan.
+---
+
+## Laporan Dokumentasi Aplikasi
+
+Treemina Sleep adalah aplikasi mobile berbasis Flutter yang dirancang untuk membantu pengguna memantau kebiasaan tidur harian, mengatur target jadwal tidur, mencatat durasi tidur, dan melihat laporan kualitas tidur secara visual.
+
+Aplikasi ini dibuat dengan pendekatan sederhana dan mudah digunakan. Pengguna dapat memulai sesi tidur, mengakhiri sesi tidur saat bangun, lalu melihat hasil durasi serta status kualitas tidur. Seluruh data utama aplikasi disimpan secara lokal di perangkat pengguna, sehingga fitur utama tetap dapat digunakan tanpa koneksi internet.
+
+Dokumentasi ini disusun sebagai laporan aplikasi untuk client, mencakup gambaran produk, fitur, teknologi, alur penggunaan, instalasi, proses build, kebutuhan izin perangkat, serta rekomendasi pengembangan lanjutan.
+
+---
+
+## Daftar Isi
+
+- [Ringkasan Proyek](#ringkasan-proyek)
+- [Identitas Proyek](#identitas-proyek)
+- [Tujuan Aplikasi](#tujuan-aplikasi)
+- [Ruang Lingkup](#ruang-lingkup)
+- [Fitur Aplikasi](#fitur-aplikasi)
+- [Alur Penggunaan](#alur-penggunaan)
+- [Struktur Navigasi](#struktur-navigasi)
+- [Teknologi](#teknologi)
+- [Struktur Folder](#struktur-folder)
+- [Instalasi](#instalasi)
+- [Build Aplikasi](#build-aplikasi)
+- [Kebutuhan Izin](#kebutuhan-izin)
+- [Penyimpanan Data](#penyimpanan-data)
+- [Pengujian Manual](#pengujian-manual)
+- [Rekomendasi Lanjutan](#rekomendasi-lanjutan)
+
+---
+
+## Ringkasan Proyek
+
+| Aspek | Ringkasan |
+| --- | --- |
+| Fokus aplikasi | Membantu pengguna mencatat dan mengevaluasi pola tidur |
+| Target pengguna | Pengguna umum yang ingin membangun rutinitas tidur lebih teratur |
+| Mode penggunaan | Mobile app, digunakan langsung dari perangkat pengguna |
+| Koneksi internet | Tidak wajib untuk fitur utama |
+| Penyimpanan | Lokal di perangkat pengguna |
+| Status | Siap dijalankan untuk demo dan pengembangan lanjutan |
+
+## Identitas Proyek
+
+| Informasi | Keterangan |
+| --- | --- |
+| Nama aplikasi | Treemina Sleep |
+| Jenis aplikasi | Sleep tracker dan sleep schedule manager |
+| Platform | Android dan iOS |
+| Framework | Flutter |
+| Bahasa pemrograman | Dart |
+| Versi aplikasi | 1.0.0+1 |
+| Orientasi layar | Portrait |
+| Penyimpanan data | Local storage |
+
+---
+
+## Tujuan Aplikasi
+
+Treemina Sleep dikembangkan untuk memberikan pengalaman pencatatan tidur yang sederhana, visual, dan mudah dipahami.
+
+Tujuan utama aplikasi:
+
+- Membantu pengguna mencatat durasi tidur harian.
+- Membantu pengguna memahami pola tidur melalui laporan visual.
+- Memberikan status kualitas tidur berdasarkan durasi tidur.
+- Memudahkan pengguna mengatur target waktu tidur dan bangun.
+- Menyediakan pengalaman penggunaan yang nyaman melalui pilihan tema.
+- Mendukung relaksasi pengguna melalui fitur musik.
+
+## Ruang Lingkup
+
+Aplikasi mencakup fitur inti yang dibutuhkan untuk manajemen tidur personal.
+
+| Modul | Cakupan |
+| --- | --- |
+| Autentikasi | Registrasi, login, logout, dan penyimpanan status login |
+| Pencatatan tidur | Mulai tidur, bangun, hitung durasi, dan simpan riwayat |
+| Jadwal tidur | Pengaturan target jam tidur dan jam bangun |
+| Laporan | Grafik durasi tidur dan daftar riwayat |
+| Pengaturan | Tema, notifikasi, musik, dan akses file audio |
+| Penyimpanan | Data tersimpan lokal di perangkat |
+
+Catatan ruang lingkup:
+
+- Aplikasi belum menggunakan backend.
+- Data belum tersinkronisasi antar perangkat.
+- Data dapat hilang jika aplikasi dihapus atau data aplikasi dibersihkan.
+
+---
+
+## Fitur Aplikasi
+
+### 1. Registrasi dan Login
+
+Pengguna dapat membuat akun lokal dan masuk ke aplikasi. Data akun disimpan pada perangkat sehingga aplikasi dapat mengenali pengguna yang sudah pernah login.
+
+Fungsi:
+
+- Registrasi pengguna baru.
+- Login pengguna.
+- Menyimpan status login.
+- Logout dari aplikasi.
+
+### 2. Dashboard Home
+
+Halaman Home menjadi pusat aktivitas utama pengguna. Pada halaman ini pengguna dapat melihat sapaan personal, jadwal tidur, status tidur terakhir, dan tombol untuk memulai atau mengakhiri sesi tidur.
+
+Fungsi:
+
+- Menampilkan nama pengguna.
+- Menampilkan jadwal target tidur dan bangun.
+- Menampilkan status tidur terakhir.
+- Memulai sesi tidur.
+- Mengakhiri sesi tidur.
+- Menampilkan hasil setelah pengguna bangun.
+
+### 3. Pencatatan Tidur
+
+Pengguna dapat menekan tombol mulai tidur saat akan tidur dan tombol bangun saat selesai tidur. Aplikasi akan menghitung durasi tidur secara otomatis.
+
+Klasifikasi status tidur:
+
+| Status | Kondisi |
+| --- | --- |
+| Bad Sleep | Durasi tidur kurang dari 7 jam |
+| Excellent Sleep | Durasi tidur sekitar 7 sampai 8 jam |
+| Over Sleep | Durasi tidur lebih dari 8 jam |
+
+### 4. Perencanaan Jadwal Tidur
+
+Halaman Plan digunakan untuk mengatur target waktu tidur dan waktu bangun sesuai rutinitas pengguna.
+
+Fungsi:
+
+- Mengatur target jam tidur.
+- Mengatur target jam bangun.
+- Menyimpan jadwal tidur.
+- Menampilkan jadwal yang sudah disimpan.
+
+### 5. Laporan Tidur
+
+Halaman Report menampilkan data tidur dalam bentuk grafik dan daftar riwayat. Fitur ini membantu pengguna melihat gambaran pola tidur dari waktu ke waktu.
+
+Fungsi:
+
+- Grafik durasi tidur.
+- Laporan mingguan.
+- Laporan bulanan.
 - Riwayat catatan tidur.
-- Notifikasi hasil kualitas tidur.
-- Pilihan tema terang, gelap, atau mengikuti sistem.
-- Musik relaksasi bawaan dan dukungan memilih file audio sendiri.
+- Indikator warna untuk status kualitas tidur.
+
+### 6. Pengaturan Aplikasi
+
+Halaman Settings menyediakan konfigurasi aplikasi sesuai preferensi pengguna.
+
+Fungsi:
+
+- Mengaktifkan atau menonaktifkan notifikasi.
+- Mengubah tema aplikasi.
+- Memilih musik relaksasi.
+- Memilih file audio dari perangkat.
+- Logout dari aplikasi.
+
+### 7. Tema Aplikasi
+
+Aplikasi menyediakan beberapa pilihan tema:
+
+| Tema | Keterangan |
+| --- | --- |
+| Light mode | Tampilan terang |
+| Dark mode | Tampilan gelap |
+| System mode | Mengikuti tema sistem perangkat |
+
+### 8. Musik Relaksasi
+
+Aplikasi menyediakan pilihan musik relaksasi dan mendukung file audio custom dari perangkat pengguna.
+
+Pilihan musik bawaan:
+
+| Track | Nama |
+| --- | --- |
+| ocean_waves | Ocean Waves |
+| rainy_night | Rainy Night |
+| calm_piano | Calm Piano |
+| forest_breeze | Forest Breeze |
+
+Catatan: pada implementasi saat ini, musik bawaan disiapkan sebagai pilihan UI. Untuk penggunaan produksi, file audio asli dapat ditambahkan ke folder `assets/audio/` dan dipanggil melalui konfigurasi service musik.
+
+---
+
+## Alur Penggunaan
+
+```text
+Buka aplikasi
+    |
+Registrasi atau login
+    |
+Masuk ke halaman utama
+    |
+Atur target tidur di halaman Plan
+    |
+Tekan mulai tidur saat akan tidur
+    |
+Tekan bangun saat selesai tidur
+    |
+Aplikasi menghitung durasi dan status tidur
+    |
+Lihat grafik dan riwayat di halaman Report
+    |
+Atur tema, notifikasi, dan musik di halaman Settings
+```
+
+Langkah penggunaan:
+
+1. Pengguna membuka aplikasi Treemina Sleep.
+2. Pengguna melakukan registrasi atau login.
+3. Pengguna mengatur target jam tidur dan jam bangun di halaman Plan.
+4. Saat akan tidur, pengguna menekan tombol mulai tidur di halaman Home.
+5. Saat bangun, pengguna menekan tombol bangun.
+6. Aplikasi menghitung durasi tidur dan menampilkan status kualitas tidur.
+7. Pengguna melihat grafik dan riwayat tidur di halaman Report.
+8. Pengguna mengubah tema, notifikasi, dan musik di halaman Settings.
+
+## Struktur Navigasi
+
+Aplikasi menggunakan bottom navigation dengan empat menu utama.
+
+| Menu | Fungsi Utama | Hasil yang Dilihat Pengguna |
+| --- | --- | --- |
+| Home | Mencatat sesi tidur | Ringkasan, status tidur, dan tombol aksi |
+| Plan | Mengatur target tidur | Jadwal tidur dan bangun |
+| Report | Melihat laporan | Grafik dan riwayat tidur |
+| Settings | Mengatur preferensi | Tema, notifikasi, musik, dan logout |
+
+---
 
 ## Teknologi
 
-- Flutter
-- Dart
-- Provider untuk state management
-- Shared Preferences untuk penyimpanan lokal
-- FL Chart untuk grafik laporan tidur
-- Flutter Local Notifications untuk notifikasi
-- Audioplayers dan File Picker untuk fitur musik
+| Teknologi | Fungsi |
+| --- | --- |
+| Flutter | Framework utama untuk membangun aplikasi mobile |
+| Dart | Bahasa pemrograman aplikasi |
+| Provider | State management |
+| Shared Preferences | Penyimpanan data lokal sederhana |
+| FL Chart | Visualisasi grafik laporan tidur |
+| Flutter Local Notifications | Menampilkan notifikasi lokal |
+| Audioplayers | Memutar file audio |
+| File Picker | Memilih file audio dari perangkat |
+| Intl | Format tanggal dan lokalisasi |
+| Permission Handler | Pengelolaan izin perangkat |
 
-## Prasyarat
+Dependency utama:
 
-Pastikan perangkat pengembangan sudah memiliki:
-
-- Flutter SDK versi stabil
-- Dart SDK
-- Android Studio atau Visual Studio Code
-- Android SDK untuk menjalankan aplikasi Android
-- Xcode jika ingin menjalankan aplikasi di iOS
-- Emulator Android, iOS Simulator, atau perangkat fisik
-
-Cek instalasi Flutter dengan perintah:
-
-```bash
-flutter doctor
+```yaml
+provider: ^6.1.2
+shared_preferences: ^2.2.3
+intl: ^0.19.0
+fl_chart: ^0.68.0
+flutter_local_notifications: ^17.2.3
+audioplayers: ^6.1.0
+file_picker: ^8.1.2
+hive: ^2.2.3
+hive_flutter: ^1.1.0
+path_provider: ^2.1.4
+permission_handler: ^11.3.1
 ```
 
-Pastikan semua kebutuhan platform yang ingin digunakan sudah berstatus siap.
-
-## Instalasi
-
-1. Clone atau buka folder proyek ini.
-
-```bash
-git clone <url-repository>
-cd treemina_sleep
-```
-
-2. Ambil semua dependency Flutter.
-
-```bash
-flutter pub get
-```
-
-3. Jalankan aplikasi pada emulator atau perangkat yang terhubung.
-
-```bash
-flutter run
-```
-
-Jika ada lebih dari satu perangkat, lihat daftar perangkat terlebih dahulu:
-
-```bash
-flutter devices
-```
-
-Lalu jalankan ke perangkat tertentu:
-
-```bash
-flutter run -d <device-id>
-```
-
-## Cara Penggunaan
-
-1. Buka aplikasi Treemina Sleep.
-2. Daftar akun baru atau login jika sudah pernah mendaftar.
-3. Pada halaman Home, tekan tombol mulai tidur saat akan tidur.
-4. Saat bangun, tekan tombol bangun untuk menyimpan sesi tidur.
-5. Aplikasi akan menghitung durasi tidur dan menampilkan status kualitas tidur.
-6. Buka halaman Plan untuk mengatur target jam tidur dan jam bangun.
-7. Buka halaman Report untuk melihat grafik dan riwayat tidur.
-8. Buka halaman Settings untuk mengatur notifikasi, tema aplikasi, dan musik relaksasi.
-
-## Build Aplikasi
-
-Untuk membuat file APK Android:
-
-```bash
-flutter build apk
-```
-
-Hasil build berada di:
-
-```text
-build/app/outputs/flutter-apk/app-release.apk
-```
-
-Untuk membuat Android App Bundle:
-
-```bash
-flutter build appbundle
-```
-
-Untuk build iOS, jalankan dari macOS dengan Xcode yang sudah dikonfigurasi:
-
-```bash
-flutter build ios
-```
+---
 
 ## Struktur Folder
 
 ```text
 lib/
-  main.dart                 Entry point aplikasi
-  models/                   Model data pengguna, jadwal, dan catatan tidur
-  pages/                    Halaman utama aplikasi
-  providers/                State management aplikasi
-  services/                 Layanan penyimpanan, notifikasi, dan musik
-  utils/                    Tema, warna, dan kalkulator tidur
-  widgets/                  Komponen UI reusable
+  main.dart
+  models/
+    user_model.dart
+    sleep_schedule_model.dart
+    sleep_record_model.dart
+  pages/
+    login_page.dart
+    register_page.dart
+    main_page.dart
+    home_page.dart
+    sleep_plan_page.dart
+    sleep_report_page.dart
+    settings_page.dart
+  providers/
+    sleep_provider.dart
+    theme_provider.dart
+  services/
+    storage_service.dart
+    notification_service.dart
+    music_service.dart
+  utils/
+    app_colors.dart
+    app_theme.dart
+    sleep_calculator.dart
+  widgets/
+    custom_button.dart
+    theme_selector.dart
+    sleep_visuals.dart
+    sleep_record_item.dart
+    sleep_chart.dart
+    sleep_status_card.dart
+    schedule_card.dart
 ```
 
-## Catatan
+| Folder | Keterangan |
+| --- | --- |
+| `models/` | Struktur data pengguna, jadwal, dan catatan tidur |
+| `pages/` | Halaman tampilan aplikasi |
+| `providers/` | Pengelolaan state aplikasi |
+| `services/` | Layanan penyimpanan, notifikasi, dan musik |
+| `utils/` | Warna, tema, dan kalkulator tidur |
+| `widgets/` | Komponen UI yang digunakan ulang |
 
-- Data pengguna, jadwal, pengaturan, dan riwayat tidur disimpan secara lokal di perangkat.
-- Fitur notifikasi membutuhkan izin notifikasi dari perangkat.
-- Fitur memilih musik sendiri membutuhkan akses file/audio pada perangkat.
+---
+
+## Instalasi
+
+### Prasyarat
+
+Pastikan perangkat pengembangan sudah memiliki:
+
+- Flutter SDK versi stabil.
+- Dart SDK.
+- Android Studio atau Visual Studio Code.
+- Android SDK.
+- Emulator Android atau perangkat Android fisik.
+- Xcode jika ingin menjalankan aplikasi di iOS.
+- Git untuk mengambil source code dari repository.
+
+Cek kesiapan environment:
+
+```bash
+flutter doctor
+```
+
+### Langkah Instalasi
+
+1. Clone repository project.
+
+```bash
+git clone <url-repository>
+```
+
+2. Masuk ke folder project.
+
+```bash
+cd treemina_sleep
+```
+
+3. Ambil dependency Flutter.
+
+```bash
+flutter pub get
+```
+
+4. Pastikan perangkat atau emulator terdeteksi.
+
+```bash
+flutter devices
+```
+
+5. Jalankan aplikasi.
+
+```bash
+flutter run
+```
+
+Menjalankan ke perangkat tertentu:
+
+```bash
+flutter run -d <device-id>
+```
+
+---
+
+## Build Aplikasi
+
+### Build APK Android
+
+```bash
+flutter build apk
+```
+
+Output:
+
+```text
+build/app/outputs/flutter-apk/app-release.apk
+```
+
+### Build Android App Bundle
+
+```bash
+flutter build appbundle
+```
+
+Output:
+
+```text
+build/app/outputs/bundle/release/app-release.aab
+```
+
+### Build iOS
+
+Build iOS hanya dapat dilakukan di macOS dengan Xcode yang sudah dikonfigurasi.
+
+```bash
+flutter build ios
+```
+
+Untuk distribusi ke App Store, proses signing dan archive dilakukan melalui Xcode.
+
+---
+
+## Kebutuhan Izin
+
+| Izin | Kegunaan |
+| --- | --- |
+| Notifikasi | Menampilkan notifikasi status kualitas tidur |
+| Akses file/audio | Memilih file musik dari perangkat |
+
+Pada beberapa versi Android atau iOS, pengguna perlu memberikan izin secara manual saat aplikasi dijalankan.
+
+## Penyimpanan Data
+
+Aplikasi menggunakan penyimpanan lokal untuk menyimpan:
+
+- Data pengguna.
+- Status login.
+- Jadwal target tidur dan bangun.
+- Riwayat catatan tidur.
+- Status sesi tidur yang sedang berjalan.
+- Pengaturan notifikasi.
+- Pengaturan tema.
+- Pilihan musik.
+- Path file musik custom.
+
+Karena data disimpan secara lokal, data dapat hilang jika aplikasi dihapus atau data aplikasi dibersihkan dari pengaturan perangkat.
+
+---
+
+## Catatan Teknis
+
+| Catatan | Keterangan |
+| --- | --- |
+| Orientasi aplikasi | Portrait |
+| Bahasa tanggal | Indonesia |
+| Internet | Tidak wajib untuk fitur utama |
+| Backend | Belum tersedia |
+| Sinkronisasi data | Belum tersedia |
+| Ekspor laporan | Belum tersedia |
+| Musik bawaan | Membutuhkan file audio asli untuk penggunaan produksi |
+
+## Pengujian Manual
+
+Checklist pengujian yang disarankan sebelum demo atau serah terima:
+
+- [ ] Registrasi pengguna baru.
+- [ ] Login menggunakan pengguna yang sudah dibuat.
+- [ ] Mulai sesi tidur.
+- [ ] Akhiri sesi tidur.
+- [ ] Pastikan durasi tidur tersimpan.
+- [ ] Pastikan status kualitas tidur tampil.
+- [ ] Ubah jadwal tidur di halaman Plan.
+- [ ] Cek grafik dan riwayat di halaman Report.
+- [ ] Ubah tema aplikasi di halaman Settings.
+- [ ] Aktifkan dan nonaktifkan notifikasi.
+- [ ] Pilih file musik dari perangkat.
+- [ ] Logout dan login kembali.
+- [ ] Tutup aplikasi saat sesi tidur berjalan, lalu buka kembali untuk memastikan sesi masih tersimpan.
+
+---
+
+## Rekomendasi Lanjutan
+
+Beberapa pengembangan yang dapat dilakukan pada versi berikutnya:
+
+| Prioritas | Rekomendasi |
+| --- | --- |
+| Tinggi | Integrasi backend untuk sinkronisasi data antar perangkat |
+| Tinggi | Reminder otomatis sebelum jam tidur |
+| Sedang | Ekspor laporan tidur ke PDF atau CSV |
+| Sedang | Login menggunakan email, Google, atau Apple ID |
+| Sedang | Analisis tren tidur mingguan dan bulanan yang lebih detail |
+| Rendah | Integrasi wearable device atau health platform |
+| Rendah | Backup dan restore data |
+| Rendah | Penambahan file audio relaksasi asli |
+
+## Kesimpulan
+
+Treemina Sleep sudah memiliki fondasi fitur utama sebagai aplikasi pencatat dan pengelola kebiasaan tidur. Aplikasi dapat digunakan untuk mencatat sesi tidur, menilai kualitas tidur berdasarkan durasi, menampilkan laporan visual, serta menyediakan pengaturan personal seperti tema, notifikasi, dan musik relaksasi.
+
+Dengan struktur project yang modular, aplikasi ini dapat dikembangkan lebih lanjut untuk kebutuhan produksi, integrasi server, fitur analitik lanjutan, atau publikasi ke marketplace aplikasi.
+
+---
+
+<div align="center">
+
+**Treemina Sleep**  
+Dokumentasi aplikasi untuk kebutuhan laporan client dan pengembangan lanjutan.
+
+</div>
