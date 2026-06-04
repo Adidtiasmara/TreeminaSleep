@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/sleep_schedule_model.dart';
 import '../providers/sleep_provider.dart';
+import '../services/storage_service.dart';
+import '../services/supabase_service.dart';
 import '../utils/app_colors.dart';
+import '../utils/sleep_calculator.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/sleep_visuals.dart';
 
@@ -17,11 +20,21 @@ class _SleepPlanPageState extends State<SleepPlanPage> {
   TimeOfDay _sleepTime = const TimeOfDay(hour: 22, minute: 0);
   TimeOfDay _wakeTime = const TimeOfDay(hour: 5, minute: 30);
   bool _saved = false;
+  int? _age;
 
   @override
   void initState() {
     super.initState();
     _loadFromProvider();
+    _loadAge();
+  }
+
+  Future<void> _loadAge() async {
+    final age = SupabaseService.isConfigured && SupabaseService.isLoggedIn
+        ? await SupabaseService.getAge()
+        : StorageService.getAge();
+    if (!mounted) return;
+    setState(() => _age = age);
   }
 
   void _loadFromProvider() {
@@ -84,6 +97,58 @@ class _SleepPlanPageState extends State<SleepPlanPage> {
     );
   }
 
+  Future<void> _editAge() async {
+    final controller = TextEditingController(text: _age?.toString() ?? '');
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final pickedAge = await showDialog<int>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: isDark ? AppColors.cardDark : AppColors.cardLight,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: Text(
+          'Masukkan Usia',
+          style: TextStyle(
+            color: isDark ? AppColors.textDark : AppColors.textLight,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'Usia',
+            suffixText: 'tahun',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () {
+              final value = int.tryParse(controller.text.trim());
+              if (value == null || value < 0 || value > 120) return;
+              Navigator.of(ctx).pop(value);
+            },
+            child: const Text('Simpan'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+
+    if (pickedAge == null) return;
+    if (SupabaseService.isConfigured && SupabaseService.isLoggedIn) {
+      await SupabaseService.updateAge(pickedAge);
+    } else {
+      await StorageService.setAge(pickedAge);
+    }
+    if (!mounted) return;
+    setState(() => _age = pickedAge);
+  }
+
   Future<void> _saveSchedule() async {
     final provider = context.read<SleepProvider>();
     await provider.updateSchedule(
@@ -141,14 +206,23 @@ class _SleepPlanPageState extends State<SleepPlanPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Atur jam target tidur dan bangun\nsesuai rutinitasmu.',
+                'Atur jam target tidur dan bangun sesuai kebutuhan tubuhmu.',
                 style: TextStyle(
                   color: secondaryColor,
                   fontSize: 14,
                   height: 1.5,
                 ),
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: 20),
+              _AgeRecommendationCard(
+                age: _age,
+                isDark: isDark,
+                primaryColor: primaryColor,
+                textColor: textColor,
+                secondaryColor: secondaryColor,
+                onSetAge: _editAge,
+              ),
+              const SizedBox(height: 18),
               _WheelTimeCard(
                 icon: Icons.nightlight_round,
                 iconColor: const Color(0xFF7986CB),
@@ -326,6 +400,100 @@ class _WheelTimeCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _AgeRecommendationCard extends StatelessWidget {
+  final int? age;
+  final bool isDark;
+  final Color primaryColor;
+  final Color textColor;
+  final Color secondaryColor;
+  final VoidCallback onSetAge;
+
+  const _AgeRecommendationCard({
+    required this.age,
+    required this.isDark,
+    required this.primaryColor,
+    required this.textColor,
+    required this.secondaryColor,
+    required this.onSetAge,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final recommendation =
+        age == null ? null : SleepCalculator.getRecommendationForAge(age!);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: age == null
+            ? (isDark
+                ? AppColors.surfaceDark
+                : AppColors.overSleepLight.withOpacity(.16))
+            : primaryColor.withOpacity(isDark ? .16 : .10),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: age == null
+              ? (isDark ? AppColors.dividerDark : const Color(0xFFF2D28B))
+              : primaryColor.withOpacity(.28),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: age == null
+                  ? AppColors.overSleepLight.withOpacity(.18)
+                  : primaryColor.withOpacity(.18),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              age == null
+                  ? Icons.person_add_alt_1_rounded
+                  : Icons.bedtime_rounded,
+              color: age == null ? AppColors.overSleepLight : primaryColor,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  age == null
+                      ? 'Isi usia terlebih dahulu'
+                      : 'Rekomendasi ${recommendation!.rangeText}',
+                  style: TextStyle(
+                    color: textColor,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  age == null
+                      ? 'Kebutuhan tidur berbeda untuk tiap usia.'
+                      : '${recommendation!.label}, usia $age tahun.',
+                  style: TextStyle(
+                    color: secondaryColor,
+                    fontSize: 12.5,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: onSetAge,
+            child: Text(age == null ? 'Isi' : 'Ubah'),
+          ),
+        ],
       ),
     );
   }

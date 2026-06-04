@@ -7,6 +7,7 @@ import '../models/sleep_record_model.dart';
 import '../providers/sleep_provider.dart';
 import '../services/notification_service.dart';
 import '../services/storage_service.dart';
+import '../services/supabase_service.dart';
 import '../utils/app_colors.dart';
 import '../utils/sleep_calculator.dart';
 import '../widgets/custom_button.dart';
@@ -49,8 +50,11 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _loadUserName() {
-    final user = StorageService.getUser();
+  Future<void> _loadUserName() async {
+    final user = SupabaseService.isConfigured && SupabaseService.isLoggedIn
+        ? await SupabaseService.getCurrentUser()
+        : StorageService.getUser();
+    if (!mounted) return;
     setState(() => _userName = user?.name ?? 'Pengguna');
   }
 
@@ -226,10 +230,11 @@ class _HomePageState extends State<HomePage> {
                       ),
                       const SizedBox(height: 20),
 
-                      if (isDark) ...[
-                        SleepHeroArt(isDark: isDark, awake: !isSleeping),
-                        const SizedBox(height: 10),
-                      ],
+                      _HeroImageCard(
+                        isDark: isDark,
+                        awake: !isSleeping && lastRecord != null,
+                      ),
+                      const SizedBox(height: 10),
 
                       // ── Status Tidur ──────────────────────────────────
                       if (lastRecord != null)
@@ -273,50 +278,12 @@ class _HomePageState extends State<HomePage> {
                         ),
                       const SizedBox(height: 14),
 
-                      // ── Fun Fact ──────────────────────────────────────
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: primaryColor.withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: primaryColor.withOpacity(0.2),
-                            width: 1,
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.lightbulb_outline,
-                                  color: primaryColor,
-                                  size: 18,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  'Fun Fact',
-                                  style: TextStyle(
-                                    color: primaryColor,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              _funFact,
-                              style: TextStyle(
-                                color: textColor.withOpacity(0.85),
-                                fontSize: 13.5,
-                                height: 1.5,
-                              ),
-                            ),
-                          ],
-                        ),
+                      _FunFactHighlight(
+                        fact: _funFact,
+                        isDark: isDark,
+                        primaryColor: primaryColor,
+                        textColor: textColor,
+                        secondaryColor: secondaryColor,
                       ),
                       const SizedBox(height: 20),
                     ],
@@ -393,6 +360,296 @@ class _StartSleepCard extends StatelessWidget {
             onPressed: onStartSleep,
             icon: Icons.bedtime_rounded,
             backgroundColor: primaryColor,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FunFactHighlight extends StatelessWidget {
+  final String fact;
+  final bool isDark;
+  final Color primaryColor;
+  final Color textColor;
+  final Color secondaryColor;
+
+  const _FunFactHighlight({
+    required this.fact,
+    required this.isDark,
+    required this.primaryColor,
+    required this.textColor,
+    required this.secondaryColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cardColor = isDark ? AppColors.cardDark : AppColors.cardLight;
+    final blue = isDark ? const Color(0xFF8DB7FF) : const Color(0xFF075B9D);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 15),
+      decoration: BoxDecoration(
+        color: cardColor.withOpacity(isDark ? .92 : 1),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? .22 : .05),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: primaryColor.withOpacity(.13),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.psychology_alt_outlined,
+                  color: primaryColor,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Fun Fact',
+                style: TextStyle(
+                  color: primaryColor,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          RichText(
+            text: TextSpan(
+              style: TextStyle(
+                color: textColor,
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                height: 1.14,
+              ),
+              children: [
+                TextSpan(
+                  text: 'Tidur: ',
+                  style: TextStyle(color: blue),
+                ),
+                const TextSpan(text: 'Kunci Kesehatan Otak'),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: _ModePill(
+                  title: 'Mode Performa',
+                  subtitle: 'Aktif & Produktif',
+                  color: isDark
+                      ? const Color(0xFF5D6BA8)
+                      : const Color(0xFFEEC0D7),
+                  textColor: textColor,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Icon(
+                  Icons.arrow_forward_rounded,
+                  color: secondaryColor,
+                  size: 18,
+                ),
+              ),
+              Expanded(
+                child: _ModePill(
+                  title: 'Mode Pemeliharaan',
+                  subtitle: 'Pemulihan & Perbaikan',
+                  color: isDark
+                      ? const Color(0xFF356D82)
+                      : const Color(0xFFC9EEF0),
+                  textColor: textColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Text(
+            fact,
+            style: TextStyle(
+              color: textColor.withOpacity(.88),
+              fontSize: 13.2,
+              height: 1.45,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          _FactBullet(
+            text: 'Saat tidur nyenyak, otak mendukung proses pemulihan.',
+            color: primaryColor,
+            textColor: secondaryColor,
+          ),
+          const SizedBox(height: 5),
+          _FactBullet(
+            text: 'Kurang tidur dapat menurunkan fokus dan stabilitas emosi.',
+            color: primaryColor,
+            textColor: secondaryColor,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ModePill extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final Color color;
+  final Color textColor;
+
+  const _ModePill({
+    required this.title,
+    required this.subtitle,
+    required this.color,
+    required this.textColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(minHeight: 72),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
+      decoration: BoxDecoration(
+        color: color.withOpacity(.82),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withOpacity(.18)),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: textColor,
+              fontSize: 12.4,
+              height: 1.14,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: textColor.withOpacity(.72),
+              fontSize: 10.8,
+              height: 1.16,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FactBullet extends StatelessWidget {
+  final String text;
+  final Color color;
+  final Color textColor;
+
+  const _FactBullet({
+    required this.text,
+    required this.color,
+    required this.textColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 7),
+          child: Container(
+            width: 5,
+            height: 5,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(color: textColor, fontSize: 12.4, height: 1.35),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _HeroImageCard extends StatelessWidget {
+  final bool isDark;
+  final bool awake;
+
+  const _HeroImageCard({required this.isDark, required this.awake});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: isDark ? 180 : 132,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? .28 : .06),
+            blurRadius: 22,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.asset(
+            awake
+                ? 'assets/images/wake-hero-tight.png'
+                : 'assets/images/sleep-hero-tight.png',
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) =>
+                SleepHeroArt(isDark: isDark, awake: awake),
+          ),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: isDark
+                    ? [
+                        Colors.transparent,
+                        AppColors.backgroundDark.withOpacity(.12),
+                      ]
+                    : [
+                        Colors.white.withOpacity(.10),
+                        Colors.white.withOpacity(.20),
+                      ],
+              ),
+            ),
           ),
         ],
       ),

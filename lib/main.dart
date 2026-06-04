@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
-import 'pages/login_page.dart';
-import 'pages/main_page.dart';
+import 'pages/splash_page.dart';
 import 'providers/sleep_provider.dart';
 import 'providers/theme_provider.dart';
 import 'services/notification_service.dart';
 import 'services/storage_service.dart';
+import 'services/supabase_service.dart';
 import 'utils/app_theme.dart';
 
 void main() async {
@@ -21,6 +21,7 @@ void main() async {
 
   // Initialize services
   await StorageService.init();
+  await SupabaseService.init();
   await NotificationService.init();
   await initializeDateFormatting('id_ID', null);
 
@@ -45,9 +46,7 @@ class TreeminaSleepApp extends StatelessWidget {
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: themeProvider.themeMode,
-            home: StorageService.isLoggedIn()
-                ? const MainPage()
-                : const LoginPage(),
+            home: const SplashPage(),
           );
         },
       ),

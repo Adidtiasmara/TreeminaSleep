@@ -45,4 +45,85 @@ class SleepCalculator {
         return '';
     }
   }
+
+  static SleepRecommendation getRecommendationForAge(int age) {
+    if (age < 1) {
+      return const SleepRecommendation(
+        label: 'Newborn 0-3 bulan: 14-17 jam; Infant 4-11 bulan: 12-15 jam',
+        minHours: 14,
+        maxHours: 17,
+        source: 'NSF 2015',
+      );
+    }
+    if (age <= 2) {
+      return const SleepRecommendation(
+        label: 'Toddler 1-2 tahun',
+        minHours: 11,
+        maxHours: 14,
+        source: 'NSF 2015',
+      );
+    }
+    if (age <= 5) {
+      return const SleepRecommendation(
+        label: 'Preschool 3-5 tahun',
+        minHours: 10,
+        maxHours: 13,
+        source: 'NSF 2015',
+      );
+    }
+    if (age <= 13) {
+      return const SleepRecommendation(
+        label: 'School-age 6-13 tahun',
+        minHours: 9,
+        maxHours: 11,
+        source: 'NSF 2015',
+      );
+    }
+    if (age <= 17) {
+      return const SleepRecommendation(
+        label: 'Teenager 14-17 tahun',
+        minHours: 8,
+        maxHours: 10,
+        source: 'NSF 2015',
+      );
+    }
+    if (age <= 25) {
+      return const SleepRecommendation(
+        label: 'Young adult 18-25 tahun',
+        minHours: 7,
+        maxHours: 9,
+        source: 'NSF 2015',
+      );
+    }
+    if (age <= 64) {
+      return const SleepRecommendation(
+        label: 'Adult 26-64 tahun',
+        minHours: 7,
+        maxHours: 9,
+        source: 'NSF 2015',
+      );
+    }
+    return const SleepRecommendation(
+      label: 'Older adult 65+ tahun',
+      minHours: 7,
+      maxHours: 8,
+      source: 'NSF 2015',
+    );
+  }
+}
+
+class SleepRecommendation {
+  final String label;
+  final int minHours;
+  final int maxHours;
+  final String source;
+
+  const SleepRecommendation({
+    required this.label,
+    required this.minHours,
+    required this.maxHours,
+    required this.source,
+  });
+
+  String get rangeText => '$minHours-$maxHours jam';
 }

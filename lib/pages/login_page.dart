@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../services/storage_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../services/supabase_service.dart';
 import '../utils/app_colors.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/sleep_visuals.dart';
@@ -35,28 +36,34 @@ class _LoginPageState extends State<LoginPage> {
       _errorMessage = null;
     });
 
-    await Future.delayed(const Duration(milliseconds: 400));
-
-    final user = StorageService.getUser();
-    if (user == null) {
+    if (!SupabaseService.isConfigured) {
       setState(() {
         _isLoading = false;
         _errorMessage =
-            'Akun tidak ditemukan. Silakan register terlebih dahulu.';
+            'Konfigurasi Supabase belum tersedia. Jalankan aplikasi dengan SUPABASE_URL dan SUPABASE_PUBLISHABLE_KEY.';
       });
       return;
     }
 
-    if (user.email.toLowerCase() != _emailCtrl.text.trim().toLowerCase() ||
-        user.password != _passwordCtrl.text) {
+    try {
+      await SupabaseService.login(
+        email: _emailCtrl.text.trim(),
+        password: _passwordCtrl.text,
+      );
+    } on AuthException catch (e) {
       setState(() {
         _isLoading = false;
-        _errorMessage = 'Email atau password salah.';
+        _errorMessage = e.message;
+      });
+      return;
+    } catch (_) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Login gagal. Periksa koneksi dan coba lagi.';
       });
       return;
     }
 
-    await StorageService.setLoggedIn(true);
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const MainPage()),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/sleep_record_model.dart';
 import '../models/sleep_schedule_model.dart';
 import '../services/storage_service.dart';
+import '../services/supabase_service.dart';
 import '../utils/sleep_calculator.dart';
 
 class SleepProvider extends ChangeNotifier {
@@ -24,18 +25,29 @@ class SleepProvider extends ChangeNotifier {
     _load();
   }
 
-  void _load() {
-    _records = StorageService.getSleepRecords();
-    _schedule = StorageService.getSleepSchedule();
-    _isSleeping = StorageService.isSleeping();
-    _sleepStart = StorageService.getSleepStart();
+  Future<void> _load() async {
+    if (SupabaseService.isConfigured && SupabaseService.isLoggedIn) {
+      _records = await SupabaseService.getSleepRecords();
+      _schedule = await SupabaseService.getSleepSchedule();
+      _sleepStart = await SupabaseService.getSleepStart();
+      _isSleeping = _sleepStart != null;
+    } else {
+      _records = StorageService.getSleepRecords();
+      _schedule = StorageService.getSleepSchedule();
+      _isSleeping = StorageService.isSleeping();
+      _sleepStart = StorageService.getSleepStart();
+    }
     if (_records.isNotEmpty) _lastRecord = _records.first;
     notifyListeners();
   }
 
   Future<void> updateSchedule(SleepSchedule schedule) async {
     _schedule = schedule;
-    await StorageService.saveSleepSchedule(schedule);
+    if (SupabaseService.isConfigured && SupabaseService.isLoggedIn) {
+      await SupabaseService.saveSleepSchedule(schedule);
+    } else {
+      await StorageService.saveSleepSchedule(schedule);
+    }
     notifyListeners();
   }
 
@@ -43,7 +55,11 @@ class SleepProvider extends ChangeNotifier {
     final now = DateTime.now();
     _sleepStart = now;
     _isSleeping = true;
-    await StorageService.setSleepStart(now);
+    if (SupabaseService.isConfigured && SupabaseService.isLoggedIn) {
+      await SupabaseService.setSleepStart(now);
+    } else {
+      await StorageService.setSleepStart(now);
+    }
     notifyListeners();
   }
 
@@ -65,10 +81,20 @@ class SleepProvider extends ChangeNotifier {
       status: status,
     );
 
-    await StorageService.addSleepRecord(record);
-    await StorageService.clearSleepSession();
+    if (SupabaseService.isConfigured && SupabaseService.isLoggedIn) {
+      await SupabaseService.addSleepRecord(record);
+    } else {
+      await StorageService.addSleepRecord(record);
+    }
+    if (SupabaseService.isConfigured && SupabaseService.isLoggedIn) {
+      await SupabaseService.clearSleepSession();
+    } else {
+      await StorageService.clearSleepSession();
+    }
 
-    _records = StorageService.getSleepRecords();
+    _records = SupabaseService.isConfigured && SupabaseService.isLoggedIn
+        ? await SupabaseService.getSleepRecords()
+        : StorageService.getSleepRecords();
     _lastRecord = record;
     _isSleeping = false;
     _sleepStart = null;
@@ -77,8 +103,10 @@ class SleepProvider extends ChangeNotifier {
     return record;
   }
 
-  void refreshRecords() {
-    _records = StorageService.getSleepRecords();
+  Future<void> refreshRecords() async {
+    _records = SupabaseService.isConfigured && SupabaseService.isLoggedIn
+        ? await SupabaseService.getSleepRecords()
+        : StorageService.getSleepRecords();
     if (_records.isNotEmpty) _lastRecord = _records.first;
     notifyListeners();
   }

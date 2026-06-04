@@ -6,10 +6,10 @@ class MusicService {
   static bool _isPlaying = false;
 
   static const List<Map<String, String>> builtInTracks = [
-    {'id': 'ocean_waves', 'name': 'Ocean Waves', 'icon': '🌊'},
-    {'id': 'rainy_night', 'name': 'Rainy Night', 'icon': '🌧️'},
-    {'id': 'calm_piano', 'name': 'Calm Piano', 'icon': '🎹'},
-    {'id': 'forest_breeze', 'name': 'Forest Breeze', 'icon': '🌲'},
+    {'id': 'ocean_waves', 'name': 'Ocean Waves'},
+    {'id': 'rainy_night', 'name': 'Rainy Night'},
+    {'id': 'calm_piano', 'name': 'Calm Piano'},
+    {'id': 'forest_breeze', 'name': 'Forest Breeze'},
   ];
 
   static String? get currentTrack => _currentTrack;
@@ -39,6 +39,17 @@ class MusicService {
       await _player.stop();
       await _player.play(DeviceFileSource(path));
       _currentTrack = path;
+      _isPlaying = true;
+    } catch (e) {
+      _isPlaying = false;
+    }
+  }
+
+  static Future<void> playCustomUrl(String url) async {
+    try {
+      await _player.stop();
+      await _player.play(UrlSource(url));
+      _currentTrack = url;
       _isPlaying = true;
     } catch (e) {
       _isPlaying = false;

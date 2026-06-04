@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../models/user_model.dart';
-import '../services/storage_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../services/supabase_service.dart';
 import '../utils/app_colors.dart';
 import '../widgets/custom_button.dart';
 import 'main_page.dart';
@@ -12,6 +12,41 @@ class RegisterPage extends StatefulWidget {
   State<RegisterPage> createState() => _RegisterPageState();
 }
 
+class _MessageBox extends StatelessWidget {
+  final String message;
+  final Color color;
+  final IconData icon;
+
+  const _MessageBox({
+    required this.message,
+    required this.color,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(color: color, fontSize: 13),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _RegisterPageState extends State<RegisterPage> {
   final _nameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
@@ -19,6 +54,8 @@ class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
   bool _isLoading = false;
+  String? _errorMessage;
+  String? _successMessage;
 
   @override
   void dispose() {
@@ -30,17 +67,48 @@ class _RegisterPageState extends State<RegisterPage> {
 
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+      _successMessage = null;
+    });
 
-    await Future.delayed(const Duration(milliseconds: 400));
+    if (!SupabaseService.isConfigured) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage =
+            'Konfigurasi Supabase belum tersedia. Jalankan aplikasi dengan SUPABASE_URL dan SUPABASE_PUBLISHABLE_KEY.';
+      });
+      return;
+    }
 
-    final user = UserModel(
-      name: _nameCtrl.text.trim(),
-      email: _emailCtrl.text.trim(),
-      password: _passwordCtrl.text,
-    );
-    await StorageService.saveUser(user);
-    await StorageService.setLoggedIn(true);
+    try {
+      final hasSession = await SupabaseService.register(
+        name: _nameCtrl.text.trim(),
+        email: _emailCtrl.text.trim(),
+        password: _passwordCtrl.text,
+      );
+      if (!hasSession) {
+        setState(() {
+          _isLoading = false;
+          _successMessage =
+              'Registrasi berhasil. Silakan verifikasi email, lalu login.';
+        });
+        return;
+      }
+    } on AuthException catch (e) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = e.message;
+      });
+      return;
+    } catch (_) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Registrasi gagal. Periksa koneksi dan coba lagi.';
+      });
+      return;
+    }
 
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
@@ -52,16 +120,13 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark
-        ? AppColors.backgroundDark
-        : AppColors.backgroundLight;
-    final primaryColor = isDark
-        ? AppColors.primaryDark
-        : AppColors.primaryLight;
+    final bgColor =
+        isDark ? AppColors.backgroundDark : AppColors.backgroundLight;
+    final primaryColor =
+        isDark ? AppColors.primaryDark : AppColors.primaryLight;
     final textColor = isDark ? AppColors.textDark : AppColors.textLight;
-    final secondaryColor = isDark
-        ? AppColors.textSecondaryDark
-        : AppColors.textSecondaryLight;
+    final secondaryColor =
+        isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -157,6 +222,24 @@ class _RegisterPageState extends State<RegisterPage> {
                     return null;
                   },
                 ),
+                if (_errorMessage != null) ...[
+                  const SizedBox(height: 12),
+                  _MessageBox(
+                    message: _errorMessage!,
+                    color: isDark
+                        ? AppColors.badSleepDark
+                        : AppColors.badSleepLight,
+                    icon: Icons.error_outline,
+                  ),
+                ],
+                if (_successMessage != null) ...[
+                  const SizedBox(height: 12),
+                  _MessageBox(
+                    message: _successMessage!,
+                    color: primaryColor,
+                    icon: Icons.check_circle_outline,
+                  ),
+                ],
                 const SizedBox(height: 28),
                 CustomButton(
                   label: 'Daftar',

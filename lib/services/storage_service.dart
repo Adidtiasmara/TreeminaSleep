@@ -13,6 +13,7 @@ class StorageService {
   static const String _keyThemeMode = 'theme_mode';
   static const String _keySelectedMusic = 'selected_music';
   static const String _keyCustomMusicPath = 'custom_music_path';
+  static const String _keyAge = 'user_age';
   static const String _keyCurrentSleepStart = 'current_sleep_start';
   static const String _keyIsSleeping = 'is_sleeping';
 
@@ -119,6 +120,12 @@ class StorageService {
 
   static String getCustomMusicPath() =>
       prefs.getString(_keyCustomMusicPath) ?? '';
+
+  static Future<void> setAge(int age) async {
+    await prefs.setInt(_keyAge, age);
+  }
+
+  static int? getAge() => prefs.getInt(_keyAge);
 
   // ── Logout ────────────────────────────────────────────
   static Future<void> logout() async {

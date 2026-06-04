@@ -5,7 +5,9 @@ import '../providers/theme_provider.dart';
 import '../services/music_service.dart';
 import '../services/notification_service.dart';
 import '../services/storage_service.dart';
+import '../services/supabase_service.dart';
 import '../utils/app_colors.dart';
+import '../utils/sleep_calculator.dart';
 import '../widgets/theme_selector.dart';
 import '../widgets/sleep_visuals.dart';
 import 'login_page.dart';
@@ -21,7 +23,11 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _notificationEnabled = true;
   String _selectedMusic = '';
   String _customMusicPath = '';
+  String _customMusicUrl = '';
+  String _customMusicName = '';
   bool _isPlayingCustom = false;
+  bool _isUploadingMusic = false;
+  int? _age;
 
   @override
   void initState() {
@@ -29,6 +35,81 @@ class _SettingsPageState extends State<SettingsPage> {
     _notificationEnabled = StorageService.isNotificationEnabled();
     _selectedMusic = StorageService.getSelectedMusic();
     _customMusicPath = StorageService.getCustomMusicPath();
+    _customMusicName =
+        _customMusicPath.isEmpty ? '' : _customMusicPath.split('/').last;
+    _loadAge();
+    _loadCustomMusic();
+  }
+
+  Future<void> _loadCustomMusic() async {
+    if (!SupabaseService.isConfigured || !SupabaseService.isLoggedIn) return;
+    final music = await SupabaseService.getCustomMusic();
+    if (!mounted || music == null) return;
+    setState(() {
+      _customMusicUrl = music.url;
+      _customMusicName = music.fileName;
+      _customMusicPath = '';
+    });
+  }
+
+  Future<void> _loadAge() async {
+    final age = SupabaseService.isConfigured && SupabaseService.isLoggedIn
+        ? await SupabaseService.getAge()
+        : StorageService.getAge();
+    if (!mounted) return;
+    setState(() => _age = age);
+  }
+
+  Future<void> _editAge() async {
+    final controller = TextEditingController(text: _age?.toString() ?? '');
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final age = await showDialog<int>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: isDark ? AppColors.cardDark : AppColors.cardLight,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: Text(
+          'Usia Pengguna',
+          style: TextStyle(
+            color: isDark ? AppColors.textDark : AppColors.textLight,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'Masukkan usia',
+            suffixText: 'tahun',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () {
+              final value = int.tryParse(controller.text.trim());
+              if (value == null || value < 0 || value > 120) return;
+              Navigator.of(ctx).pop(value);
+            },
+            child: const Text('Simpan'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+
+    if (age == null) return;
+    if (SupabaseService.isConfigured && SupabaseService.isLoggedIn) {
+      await SupabaseService.updateAge(age);
+    } else {
+      await StorageService.setAge(age);
+    }
+    if (!mounted) return;
+    setState(() => _age = age);
   }
 
   Future<void> _toggleNotification(bool value) async {
@@ -55,21 +136,54 @@ class _SettingsPageState extends State<SettingsPage> {
     );
     if (result != null && result.files.single.path != null) {
       final path = result.files.single.path!;
+      setState(() => _isUploadingMusic = true);
+      if (SupabaseService.isConfigured && SupabaseService.isLoggedIn) {
+        try {
+          final uploaded = await SupabaseService.uploadCustomMusic(path);
+          if (!mounted) return;
+          setState(() {
+            _customMusicUrl = uploaded.url;
+            _customMusicName = uploaded.fileName;
+            _customMusicPath = '';
+            _isPlayingCustom = false;
+            _selectedMusic = '';
+            _isUploadingMusic = false;
+          });
+          await StorageService.setSelectedMusic('');
+          return;
+        } catch (_) {
+          if (!mounted) return;
+          setState(() => _isUploadingMusic = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Upload lagu gagal. Periksa koneksi dan Supabase.'),
+            ),
+          );
+          return;
+        }
+      }
       setState(() {
         _customMusicPath = path;
+        _customMusicName = path.split('/').last;
+        _customMusicUrl = '';
         _isPlayingCustom = false;
+        _isUploadingMusic = false;
       });
       await StorageService.setCustomMusicPath(path);
     }
   }
 
   Future<void> _toggleCustomMusic() async {
-    if (_customMusicPath.isEmpty) return;
+    if (_customMusicPath.isEmpty && _customMusicUrl.isEmpty) return;
     if (_isPlayingCustom) {
       await MusicService.pause();
       setState(() => _isPlayingCustom = false);
     } else {
-      await MusicService.playCustom(_customMusicPath);
+      if (_customMusicUrl.isNotEmpty) {
+        await MusicService.playCustomUrl(_customMusicUrl);
+      } else {
+        await MusicService.playCustom(_customMusicPath);
+      }
       setState(() {
         _isPlayingCustom = true;
         _selectedMusic = '';
@@ -128,7 +242,11 @@ class _SettingsPageState extends State<SettingsPage> {
 
     if (confirm == true) {
       await MusicService.stop();
-      await StorageService.logout();
+      if (SupabaseService.isConfigured && SupabaseService.isLoggedIn) {
+        await SupabaseService.logout();
+      } else {
+        await StorageService.logout();
+      }
       if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const LoginPage()),
@@ -171,6 +289,61 @@ class _SettingsPageState extends State<SettingsPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // ── Notifikasi ─────────────────────────────────────────
+              _SettingsCard(
+                isDark: isDark,
+                child: Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: primaryColor.withOpacity(0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.person_outline_rounded,
+                        color: primaryColor,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _age == null
+                                ? 'Usia belum diisi'
+                                : 'Usia $_age tahun',
+                            style: TextStyle(
+                              color: textColor,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 15,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            _age == null
+                                ? 'Isi usia untuk melihat rekomendasi tidur.'
+                                : 'Rekomendasi tidur ${SleepCalculator.getRecommendationForAge(_age!).rangeText}.',
+                            style: TextStyle(
+                              color: secondaryColor,
+                              fontSize: 12.5,
+                              height: 1.35,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: _editAge,
+                      child: Text(_age == null ? 'Isi' : 'Ubah'),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
               // ── Notifikasi ─────────────────────────────────────────
               _SectionHeader(label: 'Notifikasi', textColor: textColor),
               const SizedBox(height: 10),
@@ -290,7 +463,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       style: TextStyle(color: secondaryColor, fontSize: 13),
                     ),
                     const SizedBox(height: 12),
-                    if (_customMusicPath.isNotEmpty) ...[
+                    if (_customMusicName.isNotEmpty) ...[
                       Row(
                         children: [
                           Container(
@@ -309,7 +482,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              _customMusicPath.split('/').last,
+                              _customMusicName,
                               style: TextStyle(
                                 color: textColor,
                                 fontWeight: FontWeight.w500,
@@ -335,13 +508,22 @@ class _SettingsPageState extends State<SettingsPage> {
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton.icon(
-                        onPressed: _uploadLagu,
-                        icon: Icon(
-                          Icons.upload_file_outlined,
-                          color: primaryColor,
-                        ),
+                        onPressed: _isUploadingMusic ? null : _uploadLagu,
+                        icon: _isUploadingMusic
+                            ? SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: primaryColor,
+                                ),
+                              )
+                            : Icon(
+                                Icons.upload_file_outlined,
+                                color: primaryColor,
+                              ),
                         label: Text(
-                          'Upload Lagu',
+                          _isUploadingMusic ? 'Mengupload...' : 'Upload Lagu',
                           style: TextStyle(
                             color: primaryColor,
                             fontWeight: FontWeight.w600,
@@ -507,7 +689,7 @@ class _MusicTrackTile extends StatelessWidget {
             const SizedBox(width: 14),
             Expanded(
               child: Text(
-                '${track['icon']} ${track['name']}',
+                track['name'] ?? '',
                 style: TextStyle(
                   color: textColor,
                   fontWeight: FontWeight.w500,
@@ -516,10 +698,13 @@ class _MusicTrackTile extends StatelessWidget {
               ),
             ),
             Icon(
-              Icons.chevron_right_rounded,
+              isPlaying
+                  ? Icons.pause_circle_filled_rounded
+                  : Icons.play_arrow_rounded,
               color: isDark
                   ? AppColors.textSecondaryDark
                   : AppColors.textSecondaryLight,
+              size: 20,
             ),
           ],
         ),

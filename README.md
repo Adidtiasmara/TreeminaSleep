@@ -17,7 +17,7 @@
 
 Treemina Sleep adalah aplikasi mobile berbasis Flutter yang dirancang untuk membantu pengguna memantau kebiasaan tidur harian, mengatur target jadwal tidur, mencatat durasi tidur, dan melihat laporan kualitas tidur secara visual.
 
-Aplikasi ini dibuat dengan pendekatan sederhana dan mudah digunakan. Pengguna dapat memulai sesi tidur, mengakhiri sesi tidur saat bangun, lalu melihat hasil durasi serta status kualitas tidur. Seluruh data utama aplikasi disimpan secara lokal di perangkat pengguna, sehingga fitur utama tetap dapat digunakan tanpa koneksi internet.
+Aplikasi ini dibuat dengan pendekatan sederhana dan mudah digunakan. Pengguna dapat memulai sesi tidur, mengakhiri sesi tidur saat bangun, lalu melihat hasil durasi serta status kualitas tidur. Data akun, jadwal tidur, sesi tidur aktif, dan riwayat tidur tersimpan di Supabase sehingga dapat diakses kembali saat pengguna login dari perangkat berbeda.
 
 Dokumentasi ini disusun sebagai dokumen serah terima aplikasi untuk client, mencakup gambaran produk, fitur, teknologi, alur penggunaan, instalasi, proses build, kebutuhan izin perangkat, validasi fitur, serta catatan operasional aplikasi.
 
@@ -50,8 +50,8 @@ Dokumentasi ini disusun sebagai dokumen serah terima aplikasi untuk client, menc
 | Fokus aplikasi | Membantu pengguna mencatat dan mengevaluasi pola tidur |
 | Target pengguna | Pengguna umum yang ingin membangun rutinitas tidur lebih teratur |
 | Mode penggunaan | Mobile app, digunakan langsung dari perangkat pengguna |
-| Koneksi internet | Tidak wajib untuk fitur utama |
-| Penyimpanan | Lokal di perangkat pengguna |
+| Koneksi internet | Dibutuhkan untuk login dan sinkronisasi data Supabase |
+| Penyimpanan | Supabase cloud database dan preferensi lokal perangkat |
 | Status | Selesai dan siap diserahkan kepada client |
 
 ## Identitas Proyek
@@ -65,7 +65,7 @@ Dokumentasi ini disusun sebagai dokumen serah terima aplikasi untuk client, menc
 | Bahasa pemrograman | Dart |
 | Versi aplikasi | 1.0.0+1 |
 | Orientasi layar | Portrait |
-| Penyimpanan data | Local storage |
+| Penyimpanan data | Supabase cloud database |
 
 ---
 
@@ -93,13 +93,13 @@ Aplikasi mencakup fitur inti yang dibutuhkan untuk manajemen tidur personal.
 | Jadwal tidur | Pengaturan target jam tidur dan jam bangun |
 | Laporan | Grafik durasi tidur dan daftar riwayat |
 | Pengaturan | Tema, notifikasi, musik, dan akses file audio |
-| Penyimpanan | Data tersimpan lokal di perangkat |
+| Penyimpanan | Data utama tersimpan di Supabase |
 
 Ketentuan ruang lingkup:
 
-- Aplikasi menggunakan penyimpanan lokal pada perangkat.
-- Data tidak disinkronkan antar perangkat karena aplikasi dirancang sebagai pencatatan personal lokal.
-- Data dapat hilang jika aplikasi dihapus atau data aplikasi dibersihkan.
+- Aplikasi menggunakan Supabase Auth untuk registrasi dan login.
+- Data utama pengguna tersimpan di Supabase agar dapat digunakan lintas perangkat.
+- Preferensi perangkat seperti tema dan pilihan musik tetap disimpan lokal pada perangkat.
 
 ---
 
@@ -107,7 +107,7 @@ Ketentuan ruang lingkup:
 
 ### 1. Registrasi dan Login
 
-Pengguna dapat membuat akun lokal dan masuk ke aplikasi. Data akun disimpan pada perangkat sehingga aplikasi dapat mengenali pengguna yang sudah pernah login.
+Pengguna dapat membuat akun dan masuk ke aplikasi menggunakan Supabase Auth. Akun pengguna tersimpan di Supabase sehingga pengguna dapat login dari perangkat berbeda.
 
 Fungsi:
 
@@ -256,7 +256,8 @@ Aplikasi menggunakan bottom navigation dengan empat menu utama.
 | Flutter | Framework utama untuk membangun aplikasi mobile |
 | Dart | Bahasa pemrograman aplikasi |
 | Provider | State management |
-| Shared Preferences | Penyimpanan data lokal sederhana |
+| Supabase | Auth dan cloud database pengguna |
+| Shared Preferences | Penyimpanan preferensi perangkat seperti tema dan musik |
 | FL Chart | Visualisasi grafik laporan tidur |
 | Flutter Local Notifications | Menampilkan notifikasi lokal |
 | Audioplayers | Memutar file audio |
@@ -278,6 +279,7 @@ hive: ^2.2.3
 hive_flutter: ^1.1.0
 path_provider: ^2.1.4
 permission_handler: ^11.3.1
+supabase_flutter: ^2.12.4
 ```
 
 ---
@@ -304,6 +306,7 @@ lib/
     theme_provider.dart
   services/
     storage_service.dart
+    supabase_service.dart
     notification_service.dart
     music_service.dart
   utils/
@@ -318,6 +321,7 @@ lib/
     sleep_chart.dart
     sleep_status_card.dart
     schedule_card.dart
+supabase_schema.sql
 ```
 
 | Folder | Keterangan |
@@ -325,9 +329,10 @@ lib/
 | `models/` | Struktur data pengguna, jadwal, dan catatan tidur |
 | `pages/` | Halaman tampilan aplikasi |
 | `providers/` | Pengelolaan state aplikasi |
-| `services/` | Layanan penyimpanan, notifikasi, dan musik |
+| `services/` | Layanan Supabase, penyimpanan lokal, notifikasi, dan musik |
 | `utils/` | Warna, tema, dan kalkulator tidur |
 | `widgets/` | Komponen UI yang digunakan ulang |
+| `supabase_schema.sql` | Schema database Supabase untuk tabel dan policy |
 
 ---
 
@@ -371,28 +376,41 @@ cd TreeminaSleep
 flutter pub get
 ```
 
-4. Pastikan perangkat atau emulator terdeteksi.
+4. Siapkan database Supabase.
+
+- Buat project baru di Supabase.
+- Buka menu SQL Editor.
+- Jalankan isi file `supabase_schema.sql`.
+- Ambil Project URL dan Publishable Key dari dashboard Supabase.
+
+5. Pastikan perangkat atau emulator terdeteksi.
 
 ```bash
 flutter devices
 ```
 
-5. Jalankan aplikasi pada perangkat yang tersedia.
+6. Jalankan aplikasi pada perangkat yang tersedia dengan konfigurasi Supabase.
 
 ```bash
-flutter run
+flutter run \
+  --dart-define=SUPABASE_URL=<project-url> \
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=<publishable-key>
 ```
 
 Jika terdapat lebih dari satu perangkat, jalankan aplikasi menggunakan device id:
 
 ```bash
-flutter run -d <device-id>
+flutter run -d <device-id> \
+  --dart-define=SUPABASE_URL=<project-url> \
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=<publishable-key>
 ```
 
 Contoh menjalankan aplikasi pada perangkat Android:
 
 ```bash
-flutter run -d 102752535Q010426
+flutter run -d 102752535Q010426 \
+  --dart-define=SUPABASE_URL=https://xxxxx.supabase.co \
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_xxxxx
 ```
 
 ### Menjalankan di Android
@@ -412,7 +430,9 @@ flutter devices
 6. Jalankan aplikasi ke perangkat Android.
 
 ```bash
-flutter run -d <device-id-android>
+flutter run -d <device-id-android> \
+  --dart-define=SUPABASE_URL=<project-url> \
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=<publishable-key>
 ```
 
 Jika menggunakan emulator Android, pastikan emulator sudah dinyalakan dari Android Studio atau command line sebelum menjalankan `flutter devices`.
@@ -424,7 +444,9 @@ Jika menggunakan emulator Android, pastikan emulator sudah dinyalakan dari Andro
 ### Build APK Android
 
 ```bash
-flutter build apk
+flutter build apk \
+  --dart-define=SUPABASE_URL=<project-url> \
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=<publishable-key>
 ```
 
 Output:
@@ -436,7 +458,9 @@ build/app/outputs/flutter-apk/app-release.apk
 ### Build Android App Bundle
 
 ```bash
-flutter build appbundle
+flutter build appbundle \
+  --dart-define=SUPABASE_URL=<project-url> \
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=<publishable-key>
 ```
 
 Output:
@@ -450,7 +474,9 @@ build/app/outputs/bundle/release/app-release.aab
 Build iOS hanya dapat dilakukan di macOS dengan Xcode yang sudah dikonfigurasi.
 
 ```bash
-flutter build ios
+flutter build ios \
+  --dart-define=SUPABASE_URL=<project-url> \
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=<publishable-key>
 ```
 
 Untuk distribusi ke App Store, proses signing dan archive dilakukan melalui Xcode.
@@ -461,6 +487,7 @@ Untuk distribusi ke App Store, proses signing dan archive dilakukan melalui Xcod
 
 | Izin | Kegunaan |
 | --- | --- |
+| Internet | Login, registrasi, dan sinkronisasi data Supabase |
 | Notifikasi | Menampilkan notifikasi status kualitas tidur |
 | Akses file/audio | Memilih file musik dari perangkat |
 
@@ -468,19 +495,22 @@ Pada beberapa versi Android atau iOS, pengguna perlu memberikan izin secara manu
 
 ## Penyimpanan Data
 
-Aplikasi menggunakan penyimpanan lokal untuk menyimpan:
+Aplikasi menggunakan Supabase untuk menyimpan data utama pengguna:
 
 - Data pengguna.
 - Status login.
 - Jadwal target tidur dan bangun.
 - Riwayat catatan tidur.
 - Status sesi tidur yang sedang berjalan.
+
+Aplikasi tetap menggunakan penyimpanan lokal perangkat untuk preferensi yang bersifat perangkat:
+
 - Pengaturan notifikasi.
 - Pengaturan tema.
 - Pilihan musik.
 - Path file musik custom.
 
-Karena data disimpan secara lokal, data dapat hilang jika aplikasi dihapus atau data aplikasi dibersihkan dari pengaturan perangkat.
+Dengan Supabase, data utama pengguna tetap tersedia saat pengguna login dari perangkat lain menggunakan akun yang sama.
 
 ---
 
@@ -490,9 +520,9 @@ Karena data disimpan secara lokal, data dapat hilang jika aplikasi dihapus atau 
 | --- | --- |
 | Orientasi aplikasi | Portrait |
 | Bahasa tanggal | Indonesia |
-| Internet | Tidak wajib untuk fitur utama |
-| Backend | Tidak digunakan, aplikasi berjalan dengan penyimpanan lokal |
-| Sinkronisasi data | Tidak digunakan, data tersimpan pada perangkat pengguna |
+| Internet | Dibutuhkan untuk autentikasi dan sinkronisasi Supabase |
+| Backend | Menggunakan Supabase |
+| Sinkronisasi data | Data utama dapat diakses lintas perangkat melalui akun pengguna |
 | Ekspor laporan | Tidak termasuk dalam ruang lingkup versi ini |
 | Musik bawaan | Dapat disesuaikan dengan aset audio client |
 
@@ -502,7 +532,7 @@ Daftar fitur berikut tersedia pada aplikasi dan dapat digunakan sebagai acuan se
 
 | Fitur | Hasil yang Diharapkan | Status |
 | --- | --- | --- |
-| Registrasi pengguna | Pengguna baru dapat membuat akun lokal | Tersedia |
+| Registrasi pengguna | Pengguna baru dapat membuat akun Supabase | Tersedia |
 | Login pengguna | Pengguna dapat masuk ke aplikasi | Tersedia |
 | Mulai sesi tidur | Aplikasi menyimpan waktu mulai tidur | Tersedia |
 | Akhiri sesi tidur | Aplikasi menyimpan waktu bangun | Tersedia |
@@ -523,8 +553,8 @@ Catatan berikut dapat digunakan oleh client atau tim teknis saat aplikasi diguna
 
 | Area | Catatan |
 | --- | --- |
-| Data | Data aplikasi tersimpan pada perangkat pengguna |
-| Akun | Registrasi dan login berjalan secara lokal |
+| Data | Data utama tersimpan di Supabase |
+| Akun | Registrasi dan login berjalan melalui Supabase Auth |
 | Notifikasi | Izin notifikasi perlu diberikan oleh pengguna pada perangkat |
 | Musik | Pengguna dapat memilih file audio dari perangkat |
 | Distribusi | File APK atau AAB dapat dibuat melalui perintah build Flutter |
