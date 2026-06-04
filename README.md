@@ -356,13 +356,13 @@ flutter doctor
 1. Clone repository project.
 
 ```bash
-git clone <url-repository>
+git clone https://github.com/Adidtiasmara/TreeminaSleep.git
 ```
 
 2. Masuk ke folder project.
 
 ```bash
-cd treemina_sleep
+cd TreeminaSleep
 ```
 
 3. Ambil dependency Flutter.
@@ -377,17 +377,45 @@ flutter pub get
 flutter devices
 ```
 
-5. Jalankan aplikasi.
+5. Jalankan aplikasi pada perangkat yang tersedia.
 
 ```bash
 flutter run
 ```
 
-Menjalankan ke perangkat tertentu:
+Jika terdapat lebih dari satu perangkat, jalankan aplikasi menggunakan device id:
 
 ```bash
 flutter run -d <device-id>
 ```
+
+Contoh menjalankan aplikasi pada perangkat Android:
+
+```bash
+flutter run -d 102752535Q010426
+```
+
+### Menjalankan di Android
+
+Untuk menjalankan aplikasi di perangkat Android fisik:
+
+1. Aktifkan Developer Options pada perangkat Android.
+2. Aktifkan USB Debugging.
+3. Sambungkan perangkat ke komputer menggunakan kabel USB.
+4. Izinkan permintaan debugging yang muncul di perangkat.
+5. Pastikan perangkat terdeteksi.
+
+```bash
+flutter devices
+```
+
+6. Jalankan aplikasi ke perangkat Android.
+
+```bash
+flutter run -d <device-id-android>
+```
+
+Jika menggunakan emulator Android, pastikan emulator sudah dinyalakan dari Android Studio atau command line sebelum menjalankan `flutter devices`.
 
 ---
 
