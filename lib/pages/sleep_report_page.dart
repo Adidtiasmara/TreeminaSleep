@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import '../models/sleep_record_model.dart';
 import '../providers/sleep_provider.dart';
 import '../utils/app_colors.dart';
-import '../utils/sleep_calculator.dart';
 import '../widgets/sleep_chart.dart';
 import '../widgets/sleep_record_item.dart';
 import '../widgets/sleep_visuals.dart';
@@ -52,7 +51,7 @@ class _SleepReportPageState extends State<SleepReportPage>
       builder: (context, provider, _) {
         final allRecords = provider.records;
         final weeklyRecords = _weeklyRecords(allRecords);
-        final monthlyRecords = _monthlyRecords(allRecords);
+        final monthlyRecords = _yearlyRecords(allRecords);
         final dailyRecords = _recordsOnDate(allRecords, _selectedDate);
         final selectedTab = _tabController.index;
         final visibleRecords = switch (selectedTab) {
@@ -60,11 +59,13 @@ class _SleepReportPageState extends State<SleepReportPage>
           2 => dailyRecords,
           _ => weeklyRecords,
         };
-        final chartRecords = visibleRecords.isEmpty && selectedTab != 2
-            ? _previewRecords()
-            : visibleRecords;
+        final chartPoints = switch (selectedTab) {
+          1 => _monthlyAverageChartPoints(allRecords),
+          2 => _dailyChartPoints(dailyRecords),
+          _ => _weeklyChartPoints(allRecords),
+        };
         final rangeLabel = switch (selectedTab) {
-          1 => _monthRangeLabel(_selectedDate),
+          1 => 'Rata-rata ${_selectedDate.year}',
           2 => DateFormat('EEEE, d MMMM yyyy', 'id_ID').format(_selectedDate),
           _ => _weekRangeLabel(DateTime.now()),
         };
@@ -184,7 +185,7 @@ class _SleepReportPageState extends State<SleepReportPage>
                           ),
                         ),
                         const SizedBox(height: 16),
-                        if (chartRecords.isEmpty)
+                        if (chartPoints.isEmpty)
                           _EmptyReportState(
                             isDark: isDark,
                             textColor: textColor,
@@ -194,7 +195,7 @@ class _SleepReportPageState extends State<SleepReportPage>
                           SizedBox(
                             height: 180,
                             child: SleepChart(
-                              records: chartRecords,
+                              points: chartPoints,
                               isDark: isDark,
                             ),
                           ),
@@ -275,19 +276,12 @@ class _SleepReportPageState extends State<SleepReportPage>
                     ],
                   ),
                   const SizedBox(height: 10),
-                  if (visibleRecords.isEmpty && selectedTab == 2)
+                  if (visibleRecords.isEmpty)
                     _EmptyHistoryCard(
                       isDark: isDark,
                       textColor: textColor,
                       secondaryColor: secondaryColor,
                     )
-                  else if (allRecords.isEmpty)
-                    ...chartRecords.reversed.take(4).map(
-                          (record) => SleepRecordItem(
-                            record: record,
-                            isDark: isDark,
-                          ),
-                        )
                   else
                     ...visibleRecords.take(10).map(
                           (record) => SleepRecordItem(
@@ -335,12 +329,74 @@ class _SleepReportPageState extends State<SleepReportPage>
       ..sort((a, b) => a.date.compareTo(b.date));
   }
 
-  List<SleepRecord> _monthlyRecords(List<SleepRecord> records) {
+  List<SleepRecord> _yearlyRecords(List<SleepRecord> records) {
     return records.where((record) {
-      return record.date.year == _selectedDate.year &&
-          record.date.month == _selectedDate.month;
+      return record.date.year == _selectedDate.year;
     }).toList()
       ..sort((a, b) => a.date.compareTo(b.date));
+  }
+
+  List<SleepChartPoint> _weeklyChartPoints(List<SleepRecord> records) {
+    final today = DateTime.now();
+    final start = DateTime(
+      today.year,
+      today.month,
+      today.day,
+    ).subtract(const Duration(days: 6));
+    final points = <SleepChartPoint>[];
+    var hasRecords = false;
+
+    for (var i = 0; i < 7; i++) {
+      final day = start.add(Duration(days: i));
+      final dayRecords = _recordsOnDate(records, day);
+      hasRecords = hasRecords || dayRecords.isNotEmpty;
+      points.add(
+        SleepChartPoint(
+          label: DateFormat('E', 'id_ID').format(day),
+          durationMinutes: _averageDuration(dayRecords),
+        ),
+      );
+    }
+
+    return hasRecords ? points : const [];
+  }
+
+  List<SleepChartPoint> _monthlyAverageChartPoints(List<SleepRecord> records) {
+    final yearRecords = _yearlyRecords(records);
+    if (yearRecords.isEmpty) return const [];
+
+    return List.generate(12, (index) {
+      final month = index + 1;
+      final monthRecords = yearRecords.where((record) {
+        return record.date.month == month;
+      }).toList();
+
+      return SleepChartPoint(
+        label: DateFormat('MMM', 'id_ID')
+            .format(DateTime(_selectedDate.year, month)),
+        durationMinutes: _averageDuration(monthRecords),
+      );
+    });
+  }
+
+  List<SleepChartPoint> _dailyChartPoints(List<SleepRecord> records) {
+    return records
+        .map(
+          (record) => SleepChartPoint(
+            label: DateFormat('HH:mm', 'id_ID').format(record.sleepStart),
+            durationMinutes: record.durationMinutes,
+          ),
+        )
+        .toList();
+  }
+
+  int _averageDuration(List<SleepRecord> records) {
+    if (records.isEmpty) return 0;
+    final total = records.fold<int>(
+      0,
+      (sum, record) => sum + record.durationMinutes,
+    );
+    return (total / records.length).round();
   }
 
   List<SleepRecord> _recordsOnDate(List<SleepRecord> records, DateTime date) {
@@ -351,32 +407,11 @@ class _SleepReportPageState extends State<SleepReportPage>
   bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
-  List<SleepRecord> _previewRecords() {
-    final base = DateTime(2024, 6, 1, 22);
-    final durations = [420, 390, 510, 535, 370, 490, 460];
-    return List.generate(durations.length, (index) {
-      final start = base.add(Duration(days: index - durations.length + 1));
-      final duration = durations[index];
-      final status = SleepCalculator.getSleepStatus(duration);
-      return SleepRecord(
-        id: 'preview-$index',
-        date: start,
-        sleepStart: start,
-        wakeUp: start.add(Duration(minutes: duration)),
-        durationMinutes: duration,
-        status: status,
-      );
-    });
-  }
-
   String _weekRangeLabel(DateTime date) {
     final end = DateTime(date.year, date.month, date.day);
     final start = end.subtract(const Duration(days: 6));
     return '${_fmtDate(start)} – ${_fmtDate(end)}';
   }
-
-  String _monthRangeLabel(DateTime date) =>
-      '${_monthName(date.month)} ${date.year}';
 
   String _fmtDate(DateTime d) => '${d.day} ${_monthName(d.month)}';
   String _monthName(int m) => [
@@ -459,7 +494,7 @@ class _EmptyReportState extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Belum ada riwayat tidur pada tanggal ini.',
+            'Belum ada riwayat tidur pada periode ini.',
             textAlign: TextAlign.center,
             style: TextStyle(color: secondaryColor, fontSize: 12.5),
           ),
@@ -497,7 +532,7 @@ class _EmptyHistoryCard extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            'Tidak ada riwayat di hari ini',
+            'Tidak ada riwayat tidur',
             style: TextStyle(
               color: textColor,
               fontWeight: FontWeight.w700,
@@ -506,7 +541,7 @@ class _EmptyHistoryCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Pilih tanggal lain melalui ikon kalender.',
+            'Pilih periode lain atau mulai sesi tidur baru.',
             textAlign: TextAlign.center,
             style: TextStyle(color: secondaryColor, fontSize: 12.5),
           ),

@@ -61,22 +61,28 @@ class SupabaseService {
       throw const AuthException('Registrasi gagal. Silakan coba lagi.');
     }
 
-    if (response.session != null) {
-      await client.from('profiles').upsert({
-        'id': user.id,
-        'name': name,
-        'email': email,
-        'age': null,
-      });
-
-      await client.from('sleep_schedules').upsert({
-        'user_id': user.id,
-        'target_sleep_time': '22:00',
-        'target_wake_time': '05:30',
-      });
+    if (response.session == null) {
+      try {
+        await login(email: email, password: password);
+      } on AuthException {
+        return false;
+      }
     }
 
-    return response.session != null;
+    await client.from('profiles').upsert({
+      'id': currentAuthUser?.id ?? user.id,
+      'name': name,
+      'email': email,
+      'age': null,
+    });
+
+    await client.from('sleep_schedules').upsert({
+      'user_id': currentAuthUser?.id ?? user.id,
+      'target_sleep_time': '22:00',
+      'target_wake_time': '05:30',
+    });
+
+    return true;
   }
 
   static Future<void> login({
@@ -84,6 +90,24 @@ class SupabaseService {
     required String password,
   }) async {
     await client.auth.signInWithPassword(email: email, password: password);
+  }
+
+  static Future<void> sendPasswordResetToken(String email) async {
+    await client.auth.resetPasswordForEmail(email);
+  }
+
+  static Future<void> resetPasswordWithToken({
+    required String email,
+    required String token,
+    required String newPassword,
+  }) async {
+    await client.auth.verifyOTP(
+      email: email,
+      token: token,
+      type: OtpType.recovery,
+    );
+    await client.auth.updateUser(UserAttributes(password: newPassword));
+    await client.auth.signOut();
   }
 
   static Future<void> logout() async {

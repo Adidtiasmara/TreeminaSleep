@@ -93,8 +93,8 @@ class _RegisterPageState extends State<RegisterPage> {
       if (!hasSession) {
         setState(() {
           _isLoading = false;
-          _successMessage =
-              'Registrasi berhasil. Silakan verifikasi email, lalu login.';
+          _errorMessage =
+              'Registrasi berhasil, tetapi login otomatis masih ditahan oleh Supabase. Matikan Confirm email di Supabase Auth agar user bisa langsung masuk setelah daftar.';
         });
         return;
       }

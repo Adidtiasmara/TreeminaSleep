@@ -6,6 +6,7 @@ import '../services/supabase_service.dart';
 import '../utils/app_colors.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/sleep_visuals.dart';
+import 'forgot_password_page.dart';
 import 'register_page.dart';
 import 'main_page.dart';
 
@@ -201,6 +202,29 @@ class _LoginPageState extends State<LoginPage> {
                           }
                           return null;
                         },
+                      ),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: _isLoading
+                              ? null
+                              : () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => ForgotPasswordPage(
+                                        initialEmail: _emailCtrl.text.trim(),
+                                      ),
+                                    ),
+                                  );
+                                },
+                          child: Text(
+                            'Lupa password?',
+                            style: TextStyle(
+                              color: primaryColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
                       ),
                       if (_errorMessage != null) ...[
                         const SizedBox(height: 12),
