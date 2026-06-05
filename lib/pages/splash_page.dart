@@ -51,10 +51,24 @@ class _SplashPageState extends State<SplashPage> {
                 child: Column(
                   children: [
                     const Spacer(),
-                    Icon(
-                      Icons.local_florist_outlined,
-                      color: primary,
-                      size: 76,
+                    Container(
+                      width: 112,
+                      height: 112,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(30),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(.24),
+                            blurRadius: 24,
+                            offset: const Offset(0, 12),
+                          ),
+                        ],
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: Image.asset(
+                        'assets/images/app-icon.png',
+                        fit: BoxFit.cover,
+                      ),
                     ),
                     const SizedBox(height: 20),
                     Text(
