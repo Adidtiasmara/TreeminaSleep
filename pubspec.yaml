@@ -17,6 +17,7 @@ dependencies:
   intl: ^0.20.2
   fl_chart: ^0.68.0
   flutter_local_notifications: ^17.2.3
+  timezone: ^0.9.4
   audioplayers: ^6.1.0
   file_picker: ^8.1.2
   hive: ^2.2.3

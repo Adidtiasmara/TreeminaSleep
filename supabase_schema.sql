@@ -20,6 +20,16 @@ create table if not exists public.sleep_schedules (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.saved_sleep_schedules (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  name text not null default 'Jadwal Tidur',
+  target_sleep_time text not null,
+  target_wake_time text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create table if not exists public.sleep_records (
   id text primary key,
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -122,6 +132,11 @@ create trigger set_sleep_schedules_updated_at
 before update on public.sleep_schedules
 for each row execute function public.set_updated_at();
 
+drop trigger if exists set_saved_sleep_schedules_updated_at on public.saved_sleep_schedules;
+create trigger set_saved_sleep_schedules_updated_at
+before update on public.saved_sleep_schedules
+for each row execute function public.set_updated_at();
+
 drop trigger if exists set_active_sleep_sessions_updated_at on public.active_sleep_sessions;
 create trigger set_active_sleep_sessions_updated_at
 before update on public.active_sleep_sessions
@@ -134,6 +149,7 @@ for each row execute function public.set_updated_at();
 
 alter table public.profiles enable row level security;
 alter table public.sleep_schedules enable row level security;
+alter table public.saved_sleep_schedules enable row level security;
 alter table public.sleep_records enable row level security;
 alter table public.active_sleep_sessions enable row level security;
 alter table public.user_music_tracks enable row level security;
@@ -148,6 +164,13 @@ with check (auth.uid() = id);
 drop policy if exists "Users can manage own sleep schedule" on public.sleep_schedules;
 create policy "Users can manage own sleep schedule"
 on public.sleep_schedules
+for all
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+drop policy if exists "Users can manage own saved sleep schedules" on public.saved_sleep_schedules;
+create policy "Users can manage own saved sleep schedules"
+on public.saved_sleep_schedules
 for all
 using (auth.uid() = user_id)
 with check (auth.uid() = user_id);
@@ -212,6 +235,9 @@ using (
 
 create index if not exists sleep_records_user_date_idx
 on public.sleep_records (user_id, record_date desc);
+
+create index if not exists saved_sleep_schedules_user_created_idx
+on public.saved_sleep_schedules (user_id, created_at desc);
 
 create index if not exists user_music_tracks_user_created_idx
 on public.user_music_tracks (user_id, created_at desc);

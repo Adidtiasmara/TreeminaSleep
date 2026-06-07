@@ -19,6 +19,7 @@ class _SleepPlanPageState extends State<SleepPlanPage> {
   TimeOfDay _sleepTime = const TimeOfDay(hour: 22, minute: 0);
   TimeOfDay _wakeTime = const TimeOfDay(hour: 5, minute: 30);
   bool _saved = false;
+  int _selectedMenu = 0;
 
   @override
   void initState() {
@@ -137,17 +138,47 @@ class _SleepPlanPageState extends State<SleepPlanPage> {
 
   Future<void> _saveSchedule() async {
     final provider = context.read<SleepProvider>();
-    await provider.updateSchedule(
-      SleepSchedule(
-        targetSleepTime: _formatTime(_sleepTime),
-        targetWakeTime: _formatTime(_wakeTime),
-      ),
+    final schedule = SleepSchedule(
+      name: 'Tidur ${_formatTime(_sleepTime)}',
+      targetSleepTime: _formatTime(_sleepTime),
+      targetWakeTime: _formatTime(_wakeTime),
     );
+    await provider.updateSchedule(schedule);
+    await provider.saveScheduleToList(schedule);
     setState(() => _saved = true);
     if (!mounted) return;
+    _showSnack('Jadwal berhasil disimpan dan menjadi jadwal aktif.');
+  }
+
+  Future<void> _useSavedSchedule(SleepSchedule schedule) async {
+    await context.read<SleepProvider>().useSavedSchedule(schedule);
+    final sleepParts = schedule.targetSleepTime.split(':');
+    final wakeParts = schedule.targetWakeTime.split(':');
+    setState(() {
+      _sleepTime = TimeOfDay(
+        hour: int.parse(sleepParts[0]),
+        minute: int.parse(sleepParts[1]),
+      );
+      _wakeTime = TimeOfDay(
+        hour: int.parse(wakeParts[0]),
+        minute: int.parse(wakeParts[1]),
+      );
+      _saved = false;
+    });
+    if (!mounted) return;
+    _showSnack('${schedule.name} dipakai sebagai jadwal aktif.');
+  }
+
+  Future<void> _deleteSavedSchedule(SleepSchedule schedule) async {
+    await context.read<SleepProvider>().deleteSavedSchedule(schedule);
+    if (!mounted) return;
+    _showSnack('${schedule.name} dihapus dari jadwal tersimpan.');
+  }
+
+  void _showSnack(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('Jadwal berhasil disimpan!'),
+        content: Text(message),
         backgroundColor: Theme.of(context).colorScheme.primary,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -166,6 +197,7 @@ class _SleepPlanPageState extends State<SleepPlanPage> {
     final primaryColor =
         isDark ? AppColors.primaryDark : AppColors.primaryLight;
     final age = context.watch<ProfileProvider>().age;
+    final sleepProvider = context.watch<SleepProvider>();
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -201,6 +233,15 @@ class _SleepPlanPageState extends State<SleepPlanPage> {
                 ),
               ),
               const SizedBox(height: 20),
+              _PlanMenuTabs(
+                selectedIndex: _selectedMenu,
+                isDark: isDark,
+                primaryColor: primaryColor,
+                textColor: textColor,
+                secondaryColor: secondaryColor,
+                onChanged: (index) => setState(() => _selectedMenu = index),
+              ),
+              const SizedBox(height: 20),
               _AgeRecommendationCard(
                 age: age,
                 isDark: isDark,
@@ -210,70 +251,394 @@ class _SleepPlanPageState extends State<SleepPlanPage> {
                 onSetAge: _editAge,
               ),
               const SizedBox(height: 18),
-              _WheelTimeCard(
-                icon: Icons.nightlight_round,
-                iconColor: const Color(0xFF7986CB),
-                label: 'Jam Target Tidur',
-                time: _sleepTime,
-                isDark: isDark,
-                onTap: _pickSleepTime,
-                primaryColor: primaryColor,
-                textColor: textColor,
-                secondaryColor: secondaryColor,
-              ),
-              const SizedBox(height: 16),
-              _WheelTimeCard(
-                icon: Icons.wb_sunny_outlined,
-                iconColor: const Color(0xFFFFB74D),
-                label: 'Jam Target Bangun',
-                time: _wakeTime,
-                isDark: isDark,
-                onTap: _pickWakeTime,
-                primaryColor: primaryColor,
-                textColor: textColor,
-                secondaryColor: secondaryColor,
-              ),
-              const SizedBox(height: 32),
-              CustomButton(
-                label: 'Simpan Jadwal',
-                onPressed: _saveSchedule,
-                icon: _saved ? Icons.check_rounded : Icons.save_outlined,
-              ),
-              const SizedBox(height: 20),
-              if (_saved)
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: primaryColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: primaryColor.withOpacity(0.3)),
+              if (_selectedMenu == 0) ...[
+                _WheelTimeCard(
+                  icon: Icons.nightlight_round,
+                  iconColor: const Color(0xFF7986CB),
+                  label: 'Jam Target Tidur',
+                  time: _sleepTime,
+                  isDark: isDark,
+                  onTap: _pickSleepTime,
+                  primaryColor: primaryColor,
+                  textColor: textColor,
+                  secondaryColor: secondaryColor,
+                ),
+                const SizedBox(height: 16),
+                _WheelTimeCard(
+                  icon: Icons.wb_sunny_outlined,
+                  iconColor: const Color(0xFFFFB74D),
+                  label: 'Jam Target Bangun',
+                  time: _wakeTime,
+                  isDark: isDark,
+                  onTap: _pickWakeTime,
+                  primaryColor: primaryColor,
+                  textColor: textColor,
+                  secondaryColor: secondaryColor,
+                ),
+                const SizedBox(height: 32),
+                CustomButton(
+                  label: 'Simpan Jadwal',
+                  onPressed: _saveSchedule,
+                  icon: _saved ? Icons.check_rounded : Icons.save_outlined,
+                ),
+                const SizedBox(height: 20),
+                if (_saved)
+                  _SavedInfoBox(
+                    sleepTime: _formatTime(_sleepTime),
+                    wakeTime: _formatTime(_wakeTime),
+                    primaryColor: primaryColor,
                   ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.check_circle_outline,
-                        color: primaryColor,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          'Jadwal tidur disimpan:\n'
-                          'Tidur ${_formatTime(_sleepTime)} • Bangun ${_formatTime(_wakeTime)}',
-                          style: TextStyle(
-                            color: primaryColor,
-                            fontSize: 13,
-                            height: 1.5,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+              ] else
+                _SavedScheduleList(
+                  activeSchedule: sleepProvider.schedule,
+                  schedules: sleepProvider.savedSchedules,
+                  isDark: isDark,
+                  primaryColor: primaryColor,
+                  textColor: textColor,
+                  secondaryColor: secondaryColor,
+                  onUse: _useSavedSchedule,
+                  onDelete: _deleteSavedSchedule,
                 ),
               const SizedBox(height: 24),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _PlanMenuTabs extends StatelessWidget {
+  final int selectedIndex;
+  final bool isDark;
+  final Color primaryColor;
+  final Color textColor;
+  final Color secondaryColor;
+  final ValueChanged<int> onChanged;
+
+  const _PlanMenuTabs({
+    required this.selectedIndex,
+    required this.isDark,
+    required this.primaryColor,
+    required this.textColor,
+    required this.secondaryColor,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(5),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+        ),
+      ),
+      child: Row(
+        children: [
+          _PlanMenuButton(
+            label: 'Set Jadwal',
+            icon: Icons.edit_calendar_outlined,
+            selected: selectedIndex == 0,
+            primaryColor: primaryColor,
+            textColor: textColor,
+            secondaryColor: secondaryColor,
+            onTap: () => onChanged(0),
+          ),
+          _PlanMenuButton(
+            label: 'Tersimpan',
+            icon: Icons.bookmark_border_rounded,
+            selected: selectedIndex == 1,
+            primaryColor: primaryColor,
+            textColor: textColor,
+            secondaryColor: secondaryColor,
+            onTap: () => onChanged(1),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PlanMenuButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final Color primaryColor;
+  final Color textColor;
+  final Color secondaryColor;
+  final VoidCallback onTap;
+
+  const _PlanMenuButton({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.primaryColor,
+    required this.textColor,
+    required this.secondaryColor,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          height: 46,
+          decoration: BoxDecoration(
+            color: selected ? primaryColor : Colors.transparent,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                color: selected ? Colors.white : secondaryColor,
+                size: 18,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  color: selected ? Colors.white : secondaryColor,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SavedInfoBox extends StatelessWidget {
+  final String sleepTime;
+  final String wakeTime;
+  final Color primaryColor;
+
+  const _SavedInfoBox({
+    required this.sleepTime,
+    required this.wakeTime,
+    required this.primaryColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: primaryColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: primaryColor.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.check_circle_outline, color: primaryColor, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Jadwal tidur disimpan:\nTidur $sleepTime • Bangun $wakeTime',
+              style: TextStyle(color: primaryColor, fontSize: 13, height: 1.5),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SavedScheduleList extends StatelessWidget {
+  final SleepSchedule activeSchedule;
+  final List<SleepSchedule> schedules;
+  final bool isDark;
+  final Color primaryColor;
+  final Color textColor;
+  final Color secondaryColor;
+  final ValueChanged<SleepSchedule> onUse;
+  final ValueChanged<SleepSchedule> onDelete;
+
+  const _SavedScheduleList({
+    required this.activeSchedule,
+    required this.schedules,
+    required this.isDark,
+    required this.primaryColor,
+    required this.textColor,
+    required this.secondaryColor,
+    required this.onUse,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (schedules.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.cardDark : AppColors.cardLight,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(Icons.bookmark_add_outlined, color: primaryColor, size: 34),
+            const SizedBox(height: 10),
+            Text(
+              'Belum ada jadwal tersimpan',
+              style: TextStyle(
+                color: textColor,
+                fontWeight: FontWeight.w800,
+                fontSize: 15,
+              ),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              'Buat jadwal dari menu Set Jadwal, lalu simpan agar muncul di sini.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: secondaryColor,
+                fontSize: 12.5,
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      children: schedules.map((schedule) {
+        final active =
+            schedule.targetSleepTime == activeSchedule.targetSleepTime &&
+                schedule.targetWakeTime == activeSchedule.targetWakeTime;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: _SavedScheduleCard(
+            schedule: schedule,
+            active: active,
+            isDark: isDark,
+            primaryColor: primaryColor,
+            textColor: textColor,
+            secondaryColor: secondaryColor,
+            onUse: () => onUse(schedule),
+            onDelete: () => onDelete(schedule),
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
+
+class _SavedScheduleCard extends StatelessWidget {
+  final SleepSchedule schedule;
+  final bool active;
+  final bool isDark;
+  final Color primaryColor;
+  final Color textColor;
+  final Color secondaryColor;
+  final VoidCallback onUse;
+  final VoidCallback onDelete;
+
+  const _SavedScheduleCard({
+    required this.schedule,
+    required this.active,
+    required this.isDark,
+    required this.primaryColor,
+    required this.textColor,
+    required this.secondaryColor,
+    required this.onUse,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.cardDark : AppColors.cardLight,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: active
+              ? primaryColor.withOpacity(.65)
+              : (isDark ? AppColors.dividerDark : AppColors.dividerLight),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: primaryColor.withOpacity(.13),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.bedtime_rounded, color: primaryColor),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      schedule.name,
+                      style: TextStyle(
+                        color: textColor,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Tidur ${schedule.targetSleepTime} • Bangun ${schedule.targetWakeTime}',
+                      style: TextStyle(
+                        color: secondaryColor,
+                        fontSize: 12.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                onPressed: onDelete,
+                icon: Icon(
+                  Icons.delete_outline_rounded,
+                  color:
+                      isDark ? AppColors.badSleepDark : AppColors.badSleepLight,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: active ? null : onUse,
+              icon: Icon(active
+                  ? Icons.check_rounded
+                  : Icons.playlist_add_check_rounded),
+              label: Text(active ? 'Sedang Dipakai' : 'Pakai Jadwal Ini'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: primaryColor,
+                side: BorderSide(color: primaryColor.withOpacity(.4)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

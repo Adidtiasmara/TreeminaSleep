@@ -8,20 +8,39 @@ import '../models/sleep_schedule_model.dart';
 import '../models/user_model.dart';
 
 class SupabaseService {
-  static const String url = String.fromEnvironment('SUPABASE_URL');
+  static const String url = String.fromEnvironment(
+    'SUPABASE_URL',
+    defaultValue: 'https://acxmsvwbrcehsooftzcm.supabase.co',
+  );
   static const String publishableKey = String.fromEnvironment(
     'SUPABASE_PUBLISHABLE_KEY',
+    defaultValue: 'sb_publishable_KM5EjJls9W_Ny6aJFNPLoA_5NGyVHJb',
   );
 
-  static bool get isConfigured => url.isNotEmpty && publishableKey.isNotEmpty;
+  static bool _initialized = false;
 
-  static SupabaseClient get client => Supabase.instance.client;
-  static User? get currentAuthUser => client.auth.currentUser;
+  static bool get isConfigured => url.isNotEmpty && publishableKey.isNotEmpty;
+  static bool get isReady => isConfigured && _initialized;
+
+  static SupabaseClient get client {
+    if (!isReady) {
+      throw const AuthException('Supabase belum diinisialisasi.');
+    }
+    return Supabase.instance.client;
+  }
+
+  static User? get currentAuthUser {
+    if (!isReady) return null;
+    return client.auth.currentUser;
+  }
+
   static bool get isLoggedIn => currentAuthUser != null;
 
   static Future<void> init() async {
     if (!isConfigured) return;
+    if (_initialized) return;
     await Supabase.initialize(url: url, anonKey: publishableKey);
+    _initialized = true;
   }
 
   static Future<UserModel?> getCurrentUser() async {
@@ -132,10 +151,7 @@ class SupabaseService {
         .maybeSingle();
 
     if (row == null) {
-      final schedule = SleepSchedule(
-        targetSleepTime: '22:00',
-        targetWakeTime: '05:30',
-      );
+      final schedule = SleepSchedule.fromDeviceClock();
       await saveSleepSchedule(schedule);
       return schedule;
     }
@@ -153,6 +169,60 @@ class SupabaseService {
       'target_sleep_time': schedule.targetSleepTime,
       'target_wake_time': schedule.targetWakeTime,
     });
+  }
+
+  static Future<List<SleepSchedule>> getSavedSleepSchedules() async {
+    final userId = _requireUserId();
+    final rows = await client
+        .from('saved_sleep_schedules')
+        .select('id, name, target_sleep_time, target_wake_time, created_at')
+        .eq('user_id', userId)
+        .order('created_at', ascending: false);
+
+    return rows
+        .map(
+          (row) => SleepSchedule.fromMap({
+            'id': row['id'],
+            'name': row['name'],
+            'targetSleepTime': row['target_sleep_time'],
+            'targetWakeTime': row['target_wake_time'],
+            'createdAt': row['created_at'],
+          }),
+        )
+        .toList();
+  }
+
+  static Future<SleepSchedule> addSavedSleepSchedule(
+    SleepSchedule schedule,
+  ) async {
+    final userId = _requireUserId();
+    final row = await client
+        .from('saved_sleep_schedules')
+        .insert({
+          'user_id': userId,
+          'name': schedule.name,
+          'target_sleep_time': schedule.targetSleepTime,
+          'target_wake_time': schedule.targetWakeTime,
+        })
+        .select('id, name, target_sleep_time, target_wake_time, created_at')
+        .single();
+
+    return SleepSchedule.fromMap({
+      'id': row['id'],
+      'name': row['name'],
+      'targetSleepTime': row['target_sleep_time'],
+      'targetWakeTime': row['target_wake_time'],
+      'createdAt': row['created_at'],
+    });
+  }
+
+  static Future<void> deleteSavedSleepSchedule(String id) async {
+    final userId = _requireUserId();
+    await client
+        .from('saved_sleep_schedules')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', userId);
   }
 
   static Future<List<SleepRecord>> getSleepRecords() async {

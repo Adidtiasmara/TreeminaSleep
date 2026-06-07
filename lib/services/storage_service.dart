@@ -8,6 +8,7 @@ class StorageService {
   static const String _keyUser = 'user_data';
   static const String _keyIsLoggedIn = 'is_logged_in';
   static const String _keySleepSchedule = 'sleep_schedule';
+  static const String _keySavedSleepSchedules = 'saved_sleep_schedules';
   static const String _keySleepRecords = 'sleep_records';
   static const String _keyNotificationEnabled = 'notification_enabled';
   static const String _keyThemeMode = 'theme_mode';
@@ -52,9 +53,46 @@ class StorageService {
 
   static SleepSchedule getSleepSchedule() {
     final data = prefs.getString(_keySleepSchedule);
-    if (data == null)
-      return SleepSchedule(targetSleepTime: '22:00', targetWakeTime: '05:30');
+    if (data == null) return SleepSchedule.fromDeviceClock();
     return SleepSchedule.fromMap(jsonDecode(data));
+  }
+
+  static List<SleepSchedule> getSavedSleepSchedules() {
+    final list = prefs.getStringList(_keySavedSleepSchedules) ?? [];
+    return list.map((s) => SleepSchedule.fromMap(jsonDecode(s))).toList()
+      ..sort((a, b) {
+        final aDate = a.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final bDate = b.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+        return bDate.compareTo(aDate);
+      });
+  }
+
+  static Future<void> saveSavedSleepSchedules(
+    List<SleepSchedule> schedules,
+  ) async {
+    final list = schedules.map((s) => jsonEncode(s.toMap())).toList();
+    await prefs.setStringList(_keySavedSleepSchedules, list);
+  }
+
+  static Future<SleepSchedule> addSavedSleepSchedule(
+    SleepSchedule schedule,
+  ) async {
+    final now = DateTime.now();
+    final saved = schedule.copyWith(
+      id: schedule.id ?? now.millisecondsSinceEpoch.toString(),
+      createdAt: schedule.createdAt ?? now,
+    );
+    final schedules = getSavedSleepSchedules();
+    schedules.removeWhere((item) => item.id == saved.id);
+    schedules.insert(0, saved);
+    await saveSavedSleepSchedules(schedules);
+    return saved;
+  }
+
+  static Future<void> deleteSavedSleepSchedule(String id) async {
+    final schedules = getSavedSleepSchedules()
+      ..removeWhere((item) => item.id == id);
+    await saveSavedSleepSchedules(schedules);
   }
 
   // ── Sleep Records ─────────────────────────────────────

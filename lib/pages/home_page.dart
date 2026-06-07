@@ -26,18 +26,22 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   Timer? _timer;
   Timer? _funFactTimer;
+  Timer? _clockTimer;
   Duration _elapsed = Duration.zero;
   String _userName = '';
+  DateTime _now = DateTime.now();
   late int _funFactIndex;
 
   static const List<_FunFactData> _funFacts = [
     _FunFactData(
+      icon: Icons.health_and_safety_outlined,
       titlePrefix: 'Tidur:',
       title: 'Kunci Kesehatan Otak',
       leftTitle: 'Mode Performa',
       leftSubtitle: 'Aktif & Produktif',
       rightTitle: 'Mode Pemeliharaan',
       rightSubtitle: 'Pemulihan & Perbaikan',
+      highlight: 'Otak tidak berhenti bekerja saat kamu tidur.',
       description:
           'Saat tidur, tubuh beralih dari aktivitas harian menuju proses perbaikan yang membantu otak dan tubuh pulih.',
       bullets: [
@@ -46,12 +50,14 @@ class _HomePageState extends State<HomePage> {
       ],
     ),
     _FunFactData(
+      icon: Icons.water_drop_outlined,
       titlePrefix: 'Glimfatik:',
       title: 'Sistem Pembersihan Otak',
       leftTitle: 'Sisa Metabolik',
       leftSubtitle: 'Menumpuk saat aktif',
       rightTitle: 'Jalur Bersih',
       rightSubtitle: 'Aktif saat tidur',
+      highlight: 'Tidur nyenyak membantu otak melakukan proses bersih-bersih.',
       description:
           'Ketika tidur nyenyak, otak lebih aktif membuang limbah metabolik sehingga terasa lebih segar saat bangun.',
       bullets: [
@@ -60,12 +66,14 @@ class _HomePageState extends State<HomePage> {
       ],
     ),
     _FunFactData(
+      icon: Icons.nights_stay_rounded,
       titlePrefix: 'REM:',
       title: 'Fase Mimpi dan Emosi',
       leftTitle: 'Memori',
       leftSubtitle: 'Diproses ulang',
       rightTitle: 'Emosi',
       rightSubtitle: 'Lebih stabil',
+      highlight: 'Fase mimpi ikut membantu otak menata pengalaman harian.',
       description:
           'Fase REM berperan dalam pemrosesan memori, emosi, dan mimpi yang biasanya muncul menjelang akhir siklus tidur.',
       bullets: [
@@ -74,17 +82,88 @@ class _HomePageState extends State<HomePage> {
       ],
     ),
     _FunFactData(
+      icon: Icons.wb_twilight_rounded,
       titlePrefix: 'Ritme:',
       title: 'Jam Biologis Tubuh',
       leftTitle: 'Malam',
       leftSubtitle: 'Tubuh melambat',
       rightTitle: 'Pagi',
       rightSubtitle: 'Energi naik',
+      highlight:
+          'Jam tidur yang konsisten membuat tubuh lebih mudah siap istirahat.',
       description:
           'Tidur dan bangun di jam yang konsisten membantu tubuh mengenali kapan harus istirahat dan kapan siap aktif.',
       bullets: [
         'Konsistensi jadwal sering lebih penting daripada tidur sangat larut.',
         'Cahaya pagi membantu tubuh mengatur ritme harian.',
+      ],
+    ),
+    _FunFactData(
+      icon: Icons.light_mode_outlined,
+      titlePrefix: 'Cahaya:',
+      title: 'Sinyal untuk Tubuh',
+      leftTitle: 'Terang',
+      leftSubtitle: 'Lebih waspada',
+      rightTitle: 'Redup',
+      rightSubtitle: 'Lebih mengantuk',
+      highlight:
+          'Cahaya kuat di malam hari bisa membuat tubuh merasa belum waktunya tidur.',
+      description:
+          'Paparan cahaya membantu tubuh mengatur melatonin, hormon yang memberi sinyal kapan waktunya beristirahat.',
+      bullets: [
+        'Redupkan layar dan lampu mendekati jam tidur.',
+        'Cahaya pagi membantu tubuh lebih cepat masuk mode aktif.',
+      ],
+    ),
+    _FunFactData(
+      icon: Icons.thermostat_rounded,
+      titlePrefix: 'Suhu:',
+      title: 'Tubuh Suka Sejuk',
+      leftTitle: 'Terlalu Panas',
+      leftSubtitle: 'Sering gelisah',
+      rightTitle: 'Lebih Sejuk',
+      rightSubtitle: 'Tidur lebih nyaman',
+      highlight:
+          'Lingkungan yang sejuk sering membantu tidur terasa lebih dalam.',
+      description:
+          'Menjelang tidur, suhu tubuh alami cenderung turun. Kamar yang terlalu panas bisa membuat tidur mudah terputus.',
+      bullets: [
+        'Gunakan pakaian tidur yang nyaman dan tidak gerah.',
+        'Atur kamar agar terasa sejuk, tenang, dan minim cahaya.',
+      ],
+    ),
+    _FunFactData(
+      icon: Icons.restaurant_rounded,
+      titlePrefix: 'Makan:',
+      title: 'Jeda Sebelum Tidur',
+      leftTitle: 'Perut Penuh',
+      leftSubtitle: 'Tubuh sibuk cerna',
+      rightTitle: 'Jeda Cukup',
+      rightSubtitle: 'Istirahat lebih tenang',
+      highlight:
+          'Makan berat terlalu dekat dengan jam tidur bisa mengganggu kenyamanan.',
+      description:
+          'Tubuh tetap bekerja mencerna makanan. Memberi jeda sebelum tidur membantu istirahat terasa lebih ringan.',
+      bullets: [
+        'Pilih camilan ringan jika lapar menjelang tidur.',
+        'Batasi kafein sore atau malam jika tidur mudah terganggu.',
+      ],
+    ),
+    _FunFactData(
+      icon: Icons.self_improvement_rounded,
+      titlePrefix: 'Tenang:',
+      title: 'Ritual Sebelum Tidur',
+      leftTitle: 'Pikiran Ramai',
+      leftSubtitle: 'Sulit rileks',
+      rightTitle: 'Ritual Ringan',
+      rightSubtitle: 'Tubuh siap tidur',
+      highlight:
+          'Rutinitas kecil bisa menjadi sinyal lembut bahwa hari sudah selesai.',
+      description:
+          'Aktivitas sederhana seperti mandi hangat, membaca, atau musik relaksasi dapat membantu transisi menuju tidur.',
+      bullets: [
+        'Lakukan rutinitas yang sama selama beberapa malam.',
+        'Hindari aktivitas yang terlalu menegangkan tepat sebelum tidur.',
       ],
     ),
   ];
@@ -97,6 +176,10 @@ class _HomePageState extends State<HomePage> {
     _funFactTimer = Timer.periodic(const Duration(seconds: 14), (_) {
       if (!mounted) return;
       setState(() => _funFactIndex = (_funFactIndex + 1) % _funFacts.length);
+    });
+    _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      setState(() => _now = DateTime.now());
     });
     final provider = context.read<SleepProvider>();
     if (provider.isSleeping && provider.sleepStart != null) {
@@ -130,6 +213,7 @@ class _HomePageState extends State<HomePage> {
   void dispose() {
     _timer?.cancel();
     _funFactTimer?.cancel();
+    _clockTimer?.cancel();
     super.dispose();
   }
 
@@ -273,6 +357,13 @@ class _HomePageState extends State<HomePage> {
                               ],
                             ),
                           ),
+                          _LiveClockPill(
+                            now: _now,
+                            isDark: isDark,
+                            textColor: textColor,
+                            secondaryColor: secondaryColor,
+                          ),
+                          const SizedBox(width: 4),
                           IconButton(
                             onPressed: () {
                               Navigator.of(context).push(
@@ -361,6 +452,61 @@ class _HomePageState extends State<HomePage> {
 
 // ── Sub-widgets ──────────────────────────────────────────────────────────────
 
+class _LiveClockPill extends StatelessWidget {
+  final DateTime now;
+  final bool isDark;
+  final Color textColor;
+  final Color secondaryColor;
+
+  const _LiveClockPill({
+    required this.now,
+    required this.isDark,
+    required this.textColor,
+    required this.secondaryColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: isDark
+            ? AppColors.surfaceDark.withOpacity(.82)
+            : AppColors.cardLight.withOpacity(.92),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text(
+            DateFormat('HH:mm').format(now),
+            style: TextStyle(
+              color: textColor,
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              height: 1,
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            DateFormat('d MMM').format(now),
+            style: TextStyle(
+              color: secondaryColor,
+              fontSize: 10.5,
+              fontWeight: FontWeight.w600,
+              height: 1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _StartSleepCard extends StatelessWidget {
   final String targetSleepTime;
   final bool isDark;
@@ -429,22 +575,26 @@ class _StartSleepCard extends StatelessWidget {
 }
 
 class _FunFactData {
+  final IconData icon;
   final String titlePrefix;
   final String title;
   final String leftTitle;
   final String leftSubtitle;
   final String rightTitle;
   final String rightSubtitle;
+  final String highlight;
   final String description;
   final List<String> bullets;
 
   const _FunFactData({
+    required this.icon,
     required this.titlePrefix,
     required this.title,
     required this.leftTitle,
     required this.leftSubtitle,
     required this.rightTitle,
     required this.rightSubtitle,
+    required this.highlight,
     required this.description,
     required this.bullets,
   });
@@ -469,6 +619,7 @@ class _FunFactHighlight extends StatelessWidget {
   Widget build(BuildContext context) {
     final cardColor = isDark ? AppColors.cardDark : AppColors.cardLight;
     final blue = isDark ? const Color(0xFF8DB7FF) : const Color(0xFF075B9D);
+    final accentSoft = primaryColor.withOpacity(isDark ? .16 : .11);
 
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 450),
@@ -496,25 +647,37 @@ class _FunFactHighlight extends StatelessWidget {
             Row(
               children: [
                 Container(
-                  width: 34,
-                  height: 34,
+                  width: 38,
+                  height: 38,
                   decoration: BoxDecoration(
-                    color: primaryColor.withOpacity(.13),
+                    color: accentSoft,
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
-                    Icons.psychology_alt_outlined,
-                    color: primaryColor,
-                    size: 20,
-                  ),
+                  child: Icon(fact.icon, color: primaryColor, size: 21),
                 ),
                 const SizedBox(width: 10),
-                Text(
-                  'Fun Fact',
-                  style: TextStyle(
-                    color: primaryColor,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 14,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Fun Fact',
+                        style: TextStyle(
+                          color: primaryColor,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Insight tidur harian',
+                        style: TextStyle(
+                          color: secondaryColor,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -534,6 +697,38 @@ class _FunFactHighlight extends StatelessWidget {
                     style: TextStyle(color: blue),
                   ),
                   TextSpan(text: fact.title),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: accentSoft,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: primaryColor.withOpacity(.18)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.bolt_rounded,
+                    color: primaryColor,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      fact.highlight,
+                      style: TextStyle(
+                        color: textColor,
+                        fontSize: 12.7,
+                        height: 1.3,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),

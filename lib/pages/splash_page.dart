@@ -26,8 +26,9 @@ class _SplashPageState extends State<SplashPage> {
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (_) =>
-            SupabaseService.isLoggedIn ? const MainPage() : const LoginPage(),
+        builder: (_) => SupabaseService.isReady && SupabaseService.isLoggedIn
+            ? const MainPage()
+            : const LoginPage(),
       ),
     );
   }

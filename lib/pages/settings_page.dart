@@ -2,6 +2,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/profile_provider.dart';
+import '../providers/sleep_provider.dart';
 import '../providers/theme_provider.dart';
 import '../services/music_service.dart';
 import '../services/notification_service.dart';
@@ -105,6 +106,12 @@ class _SettingsPageState extends State<SettingsPage> {
     await StorageService.setNotificationEnabled(value);
     if (value) {
       await NotificationService.requestPermission();
+      if (!mounted) return;
+      await NotificationService.scheduleSleepPlanReminder(
+        context.read<SleepProvider>().schedule.targetSleepTime,
+      );
+    } else {
+      await NotificationService.cancelSleepPlanReminder();
     }
   }
 
