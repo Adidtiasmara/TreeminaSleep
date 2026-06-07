@@ -425,6 +425,7 @@ class _HomePageState extends State<HomePage> {
                       else
                         _StartSleepCard(
                           targetSleepTime: schedule.targetSleepTime,
+                          now: _now,
                           isDark: isDark,
                           onStartSleep: () => _onStartSleep(provider),
                         ),
@@ -509,14 +510,40 @@ class _LiveClockPill extends StatelessWidget {
 
 class _StartSleepCard extends StatelessWidget {
   final String targetSleepTime;
+  final DateTime now;
   final bool isDark;
   final VoidCallback onStartSleep;
 
   const _StartSleepCard({
     required this.targetSleepTime,
+    required this.now,
     required this.isDark,
     required this.onStartSleep,
   });
+
+  Duration _timeUntilTarget() {
+    final parts = targetSleepTime.split(':');
+    final hour = int.tryParse(parts.first) ?? 22;
+    final minute = parts.length > 1 ? int.tryParse(parts[1]) ?? 0 : 0;
+    var target = DateTime(now.year, now.month, now.day, hour, minute);
+    if (!target.isAfter(now)) {
+      target = target.add(const Duration(days: 1));
+    }
+    return target.difference(now);
+  }
+
+  String _countdownText(Duration duration) {
+    final totalMinutes = duration.inMinutes;
+    if (totalMinutes <= 0) return 'Sekarang waktunya tidur.';
+    if (totalMinutes < 60) {
+      return '$totalMinutes menit lagi harus tidur.';
+    }
+
+    final hours = totalMinutes ~/ 60;
+    final minutes = totalMinutes % 60;
+    if (minutes == 0) return '$hours jam lagi harus tidur.';
+    return '$hours jam $minutes menit lagi harus tidur.';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -525,6 +552,11 @@ class _StartSleepCard extends StatelessWidget {
     final textColor = isDark ? AppColors.textDark : AppColors.textLight;
     final secondaryColor =
         isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
+    final remaining = _timeUntilTarget();
+    final isNearBedtime = remaining.inMinutes <= 30;
+    final alertColor =
+        isDark ? AppColors.badSleepDark : AppColors.badSleepLight;
+    final countdownColor = isNearBedtime ? alertColor : primaryColor;
 
     return Container(
       width: double.infinity,
@@ -560,6 +592,39 @@ class _StartSleepCard extends StatelessWidget {
           Text(
             'Jam target tidur $targetSleepTime',
             style: TextStyle(color: secondaryColor, fontSize: 13),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: countdownColor.withOpacity(isNearBedtime ? .16 : .10),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: countdownColor.withOpacity(.32)),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  isNearBedtime
+                      ? Icons.notifications_active_outlined
+                      : Icons.timer_outlined,
+                  color: countdownColor,
+                  size: 20,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    _countdownText(remaining),
+                    style: TextStyle(
+                      color: countdownColor,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      height: 1.3,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 16),
           CustomButton(
@@ -701,91 +766,492 @@ class _FunFactHighlight extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: accentSoft,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: primaryColor.withOpacity(.18)),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    Icons.bolt_rounded,
-                    color: primaryColor,
-                    size: 18,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      fact.highlight,
-                      style: TextStyle(
-                        color: textColor,
-                        fontSize: 12.7,
-                        height: 1.3,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+            _FunFactVariant(
+              fact: fact,
+              isDark: isDark,
+              primaryColor: primaryColor,
+              textColor: textColor,
+              secondaryColor: secondaryColor,
             ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: _ModePill(
-                    title: fact.leftTitle,
-                    subtitle: fact.leftSubtitle,
-                    color: isDark
-                        ? const Color(0xFF5D6BA8)
-                        : const Color(0xFFEEC0D7),
-                    textColor: textColor,
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Icon(
-                    Icons.arrow_forward_rounded,
-                    color: secondaryColor,
-                    size: 18,
-                  ),
-                ),
-                Expanded(
-                  child: _ModePill(
-                    title: fact.rightTitle,
-                    subtitle: fact.rightSubtitle,
-                    color: isDark
-                        ? const Color(0xFF356D82)
-                        : const Color(0xFFC9EEF0),
-                    textColor: textColor,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Text(
-              fact.description,
-              style: TextStyle(
-                color: textColor.withOpacity(.88),
-                fontSize: 13.2,
-                height: 1.45,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 8),
-            for (final bullet in fact.bullets) ...[
-              _FactBullet(
-                text: bullet,
-                color: primaryColor,
-                textColor: secondaryColor,
-              ),
-              const SizedBox(height: 5),
-            ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _FunFactVariant extends StatelessWidget {
+  final _FunFactData fact;
+  final bool isDark;
+  final Color primaryColor;
+  final Color textColor;
+  final Color secondaryColor;
+
+  const _FunFactVariant({
+    required this.fact,
+    required this.isDark,
+    required this.primaryColor,
+    required this.textColor,
+    required this.secondaryColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    switch (fact.titlePrefix) {
+      case 'Glimfatik:':
+        return _diagramLayout();
+      case 'REM:':
+        return _timelineLayout();
+      case 'Ritme:':
+      case 'Suhu:':
+        return _meterLayout();
+      case 'Cahaya:':
+        return _switchLayout();
+      case 'Makan:':
+        return _checklistLayout();
+      case 'Tenang:':
+        return _spotlightLayout();
+      default:
+        return _flowLayout();
+    }
+  }
+
+  Widget _flowLayout() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _HighlightNote(
+          text: fact.highlight,
+          icon: Icons.bolt_rounded,
+          primaryColor: primaryColor,
+          textColor: textColor,
+        ),
+        const SizedBox(height: 14),
+        Row(
+          children: [
+            Expanded(
+              child: _ModePill(
+                title: fact.leftTitle,
+                subtitle: fact.leftSubtitle,
+                color:
+                    isDark ? const Color(0xFF5D6BA8) : const Color(0xFFEEC0D7),
+                textColor: textColor,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Icon(
+                Icons.arrow_forward_rounded,
+                color: secondaryColor,
+                size: 18,
+              ),
+            ),
+            Expanded(
+              child: _ModePill(
+                title: fact.rightTitle,
+                subtitle: fact.rightSubtitle,
+                color:
+                    isDark ? const Color(0xFF356D82) : const Color(0xFFC9EEF0),
+                textColor: textColor,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        _FactText(text: fact.description, color: textColor),
+      ],
+    );
+  }
+
+  Widget _diagramLayout() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: primaryColor.withOpacity(.10),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            children: [
+              _DiagramNode(label: fact.leftTitle, color: secondaryColor),
+              Container(
+                width: 3,
+                height: 26,
+                margin: const EdgeInsets.symmetric(vertical: 7),
+                decoration: BoxDecoration(
+                  color: primaryColor.withOpacity(.55),
+                  borderRadius: BorderRadius.circular(99),
+                ),
+              ),
+              _DiagramNode(label: fact.rightTitle, color: primaryColor),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        _HighlightNote(
+          text: fact.highlight,
+          icon: Icons.cleaning_services_outlined,
+          primaryColor: primaryColor,
+          textColor: textColor,
+        ),
+        const SizedBox(height: 10),
+        _FactText(text: fact.description, color: textColor),
+      ],
+    );
+  }
+
+  Widget _timelineLayout() {
+    final items = [fact.leftTitle, fact.highlight, fact.rightTitle];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (var i = 0; i < items.length; i++)
+          _TimelineStep(
+            text: items[i],
+            last: i == items.length - 1,
+            primaryColor: primaryColor,
+            textColor: i == 1 ? textColor : secondaryColor,
+          ),
+        const SizedBox(height: 8),
+        _FactText(text: fact.description, color: textColor),
+      ],
+    );
+  }
+
+  Widget _meterLayout() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _HighlightNote(
+          text: fact.highlight,
+          icon: Icons.speed_rounded,
+          primaryColor: primaryColor,
+          textColor: textColor,
+        ),
+        const SizedBox(height: 14),
+        Row(
+          children: [
+            Text(
+              fact.leftTitle,
+              style: TextStyle(color: secondaryColor, fontSize: 11.5),
+            ),
+            Expanded(
+              child: Container(
+                height: 12,
+                margin: const EdgeInsets.symmetric(horizontal: 10),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(99),
+                  gradient: LinearGradient(
+                    colors: [
+                      const Color(0xFFFFC857).withOpacity(.95),
+                      primaryColor,
+                      const Color(0xFF8DB7FF).withOpacity(.9),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Text(
+              fact.rightTitle,
+              style: TextStyle(color: secondaryColor, fontSize: 11.5),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        _FactText(text: fact.description, color: textColor),
+      ],
+    );
+  }
+
+  Widget _switchLayout() {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _MiniInfoTile(
+                icon: Icons.light_mode_outlined,
+                title: fact.leftTitle,
+                subtitle: fact.leftSubtitle,
+                color: const Color(0xFFFFC857),
+                textColor: textColor,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _MiniInfoTile(
+                icon: Icons.dark_mode_outlined,
+                title: fact.rightTitle,
+                subtitle: fact.rightSubtitle,
+                color: primaryColor,
+                textColor: textColor,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        _HighlightNote(
+          text: fact.highlight,
+          icon: Icons.tips_and_updates_outlined,
+          primaryColor: primaryColor,
+          textColor: textColor,
+        ),
+      ],
+    );
+  }
+
+  Widget _checklistLayout() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _HighlightNote(
+          text: fact.highlight,
+          icon: Icons.restaurant_menu_rounded,
+          primaryColor: primaryColor,
+          textColor: textColor,
+        ),
+        const SizedBox(height: 10),
+        for (final bullet in fact.bullets)
+          _FactBullet(
+            text: bullet,
+            color: primaryColor,
+            textColor: secondaryColor,
+          ),
+      ],
+    );
+  }
+
+  Widget _spotlightLayout() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isDark
+            ? Colors.white.withOpacity(.04)
+            : primaryColor.withOpacity(.08),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.self_improvement_rounded, color: primaryColor, size: 30),
+          const SizedBox(height: 10),
+          Text(
+            fact.highlight,
+            style: TextStyle(
+              color: textColor,
+              fontWeight: FontWeight.w800,
+              fontSize: 15,
+              height: 1.3,
+            ),
+          ),
+          const SizedBox(height: 8),
+          _FactText(text: fact.description, color: secondaryColor),
+        ],
+      ),
+    );
+  }
+}
+
+class _HighlightNote extends StatelessWidget {
+  final String text;
+  final IconData icon;
+  final Color primaryColor;
+  final Color textColor;
+
+  const _HighlightNote({
+    required this.text,
+    required this.icon,
+    required this.primaryColor,
+    required this.textColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: primaryColor.withOpacity(.11),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: primaryColor.withOpacity(.18)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: primaryColor, size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                color: textColor,
+                fontSize: 12.7,
+                height: 1.3,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DiagramNode extends StatelessWidget {
+  final String label;
+  final Color color;
+
+  const _DiagramNode({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 11,
+          height: 11,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(color: color, fontWeight: FontWeight.w800),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _TimelineStep extends StatelessWidget {
+  final String text;
+  final bool last;
+  final Color primaryColor;
+  final Color textColor;
+
+  const _TimelineStep({
+    required this.text,
+    required this.last,
+    required this.primaryColor,
+    required this.textColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Column(
+          children: [
+            Container(
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
+                color: primaryColor,
+                shape: BoxShape.circle,
+              ),
+            ),
+            if (!last)
+              Container(
+                width: 2,
+                height: 30,
+                color: primaryColor.withOpacity(.35),
+              ),
+          ],
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Text(
+              text,
+              style: TextStyle(
+                color: textColor,
+                fontWeight: FontWeight.w700,
+                fontSize: 12.8,
+                height: 1.3,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MiniInfoTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color color;
+  final Color textColor;
+
+  const _MiniInfoTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.color,
+    required this.textColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(minHeight: 98),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(.13),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: color.withOpacity(.22)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 22),
+          const SizedBox(height: 8),
+          Text(
+            title,
+            style: TextStyle(
+              color: textColor,
+              fontWeight: FontWeight.w800,
+              fontSize: 12.5,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            style: TextStyle(
+              color: textColor.withOpacity(.68),
+              fontSize: 11,
+              height: 1.2,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FactText extends StatelessWidget {
+  final String text;
+  final Color color;
+
+  const _FactText({required this.text, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: TextStyle(
+        color: color.withOpacity(.88),
+        fontSize: 13.2,
+        height: 1.45,
+        fontWeight: FontWeight.w500,
       ),
     );
   }

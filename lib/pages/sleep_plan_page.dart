@@ -170,9 +170,47 @@ class _SleepPlanPageState extends State<SleepPlanPage> {
   }
 
   Future<void> _deleteSavedSchedule(SleepSchedule schedule) async {
-    await context.read<SleepProvider>().deleteSavedSchedule(schedule);
+    final provider = context.read<SleepProvider>();
+    final confirmed = await _confirmDeleteSchedule(schedule);
+    if (confirmed != true) return;
+    await provider.deleteSavedSchedule(schedule);
     if (!mounted) return;
     _showSnack('${schedule.name} dihapus dari jadwal tersimpan.');
+  }
+
+  Future<bool?> _confirmDeleteSchedule(SleepSchedule schedule) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? AppColors.textDark : AppColors.textLight;
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: isDark ? AppColors.cardDark : AppColors.cardLight,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: Text(
+          'Hapus Jadwal?',
+          style: TextStyle(color: textColor, fontWeight: FontWeight.w800),
+        ),
+        content: Text(
+          '${schedule.name}\nTidur ${schedule.targetSleepTime} • Bangun ${schedule.targetWakeTime}',
+          style: TextStyle(
+            color: isDark
+                ? AppColors.textSecondaryDark
+                : AppColors.textSecondaryLight,
+            height: 1.45,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showSnack(String message) {
