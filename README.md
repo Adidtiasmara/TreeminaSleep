@@ -50,9 +50,7 @@ Dokumentasi ini disusun sebagai dokumen serah terima aplikasi untuk client, menc
 | Fokus aplikasi | Membantu pengguna mencatat dan mengevaluasi pola tidur |
 | Target pengguna | Pengguna umum yang ingin membangun rutinitas tidur lebih teratur |
 | Mode penggunaan | Mobile app, digunakan langsung dari perangkat pengguna |
-| Koneksi internet | Dibutuhkan untuk login dan sinkronisasi data Supabase |
-| Penyimpanan | Supabase cloud database dan preferensi lokal perangkat |
-| Status | Selesai dan siap diserahkan kepada client |
+| Koneksi internet | Dibutuhkan untuk login dan sinkronisasi data |
 
 ## Identitas Proyek
 
@@ -65,7 +63,6 @@ Dokumentasi ini disusun sebagai dokumen serah terima aplikasi untuk client, menc
 | Bahasa pemrograman | Dart |
 | Versi aplikasi | 1.0.0+1 |
 | Orientasi layar | Portrait |
-| Penyimpanan data | Supabase cloud database |
 
 ---
 
