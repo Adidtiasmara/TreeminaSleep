@@ -6,10 +6,9 @@ class MusicService {
   static bool _isPlaying = false;
 
   static const List<Map<String, String>> builtInTracks = [
-    {'id': 'ocean_waves', 'name': 'Ocean Waves'},
-    {'id': 'rainy_night', 'name': 'Rainy Night'},
-    {'id': 'calm_piano', 'name': 'Calm Piano'},
-    {'id': 'forest_breeze', 'name': 'Forest Breeze'},
+    {'id': 'lofi_rain', 'name': 'Lo-Fi Rain'},
+    {'id': 'chill_lofi', 'name': 'Chill Lo-Fi'},
+    {'id': 'sea_waves', 'name': 'Sea Waves'},
   ];
 
   static String? get currentTrack => _currentTrack;
