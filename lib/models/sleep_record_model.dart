@@ -16,20 +16,25 @@ class SleepRecord {
   });
 
   Map<String, dynamic> toMap() => {
-    'id': id,
-    'date': date.toIso8601String(),
-    'sleepStart': sleepStart.toIso8601String(),
-    'wakeUp': wakeUp.toIso8601String(),
-    'durationMinutes': durationMinutes,
-    'status': status,
-  };
+        'id': id,
+        'date': date.toIso8601String(),
+        'sleepStart': sleepStart.toIso8601String(),
+        'wakeUp': wakeUp.toIso8601String(),
+        'durationMinutes': durationMinutes,
+        'status': status,
+      };
+
+  static DateTime _parseDateTime(dynamic value) {
+    if (value is DateTime) return value.toLocal();
+    return DateTime.parse(value.toString()).toLocal();
+  }
 
   factory SleepRecord.fromMap(Map<String, dynamic> map) => SleepRecord(
-    id: map['id'] ?? '',
-    date: DateTime.parse(map['date']),
-    sleepStart: DateTime.parse(map['sleepStart']),
-    wakeUp: DateTime.parse(map['wakeUp']),
-    durationMinutes: map['durationMinutes'] ?? 0,
-    status: map['status'] ?? 'Bad Sleep',
-  );
+        id: map['id'] ?? '',
+        date: _parseDateTime(map['date']),
+        sleepStart: _parseDateTime(map['sleepStart']),
+        wakeUp: _parseDateTime(map['wakeUp']),
+        durationMinutes: map['durationMinutes'] ?? 0,
+        status: map['status'] ?? 'Bad Sleep',
+      );
 }

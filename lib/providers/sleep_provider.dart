@@ -67,9 +67,14 @@ class SleepProvider extends ChangeNotifier {
       await StorageService.saveSleepSchedule(schedule);
     }
     if (StorageService.isNotificationEnabled()) {
-      await NotificationService.scheduleSleepPlanReminder(
-        schedule.targetSleepTime,
-      );
+      try {
+        await NotificationService.scheduleSleepPlanReminder(
+          schedule.targetSleepTime,
+          schedule.targetWakeTime,
+        );
+      } catch (_) {
+        // Jadwal utama tetap tersimpan meskipun izin/cache notifikasi bermasalah.
+      }
     } else {
       await NotificationService.cancelSleepPlanReminder();
     }
@@ -163,6 +168,23 @@ class SleepProvider extends ChangeNotifier {
         ? await SupabaseService.getSleepRecords()
         : StorageService.getSleepRecords();
     if (_records.isNotEmpty) _lastRecord = _records.first;
+    notifyListeners();
+  }
+
+  Future<void> resetSleepData() async {
+    if (SupabaseService.isConfigured && SupabaseService.isLoggedIn) {
+      await SupabaseService.clearSleepRecords();
+      await SupabaseService.clearSleepSession();
+    }
+    await StorageService.clearSleepRecords();
+    await StorageService.clearSleepSession();
+    await NotificationService.cancelSleepSessionNotification();
+
+    _records = [];
+    _lastRecord = null;
+    _isSleeping = false;
+    _sleepStart = null;
+
     notifyListeners();
   }
 

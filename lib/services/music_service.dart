@@ -22,8 +22,8 @@ class MusicService {
         return;
       }
       await _player.stop();
-      // Karena tidak ada file audio sungguhan, kita simulasikan
-      // Pada implementasi nyata, gunakan: await _player.play(AssetSource('audio/$trackId.mp3'));
+      await _player.setReleaseMode(ReleaseMode.loop);
+      await _player.play(AssetSource('audio/$trackId.mp3'));
       _currentTrack = trackId;
       _isPlaying = true;
       _player.onPlayerComplete.listen((_) {

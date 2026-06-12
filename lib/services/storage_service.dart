@@ -113,6 +113,10 @@ class StorageService {
     await saveSleepRecords(records);
   }
 
+  static Future<void> clearSleepRecords() async {
+    await prefs.remove(_keySleepRecords);
+  }
+
   // ── Active Sleep Session ──────────────────────────────
   static Future<void> setSleepStart(DateTime time) async {
     await prefs.setString(_keyCurrentSleepStart, time.toIso8601String());

@@ -36,6 +36,12 @@ class SupabaseService {
 
   static bool get isLoggedIn => currentAuthUser != null;
 
+  static String _timestamp(DateTime time) => time.toUtc().toIso8601String();
+
+  static DateTime _localDateTime(dynamic value) {
+    return DateTime.parse(value.toString()).toLocal();
+  }
+
   static Future<void> init() async {
     if (!isConfigured) return;
     if (_initialized) return;
@@ -254,12 +260,17 @@ class SupabaseService {
     await client.from('sleep_records').insert({
       'id': record.id,
       'user_id': userId,
-      'record_date': record.date.toIso8601String(),
-      'sleep_start': record.sleepStart.toIso8601String(),
-      'wake_up': record.wakeUp.toIso8601String(),
+      'record_date': _timestamp(record.date),
+      'sleep_start': _timestamp(record.sleepStart),
+      'wake_up': _timestamp(record.wakeUp),
       'duration_minutes': record.durationMinutes,
       'status': record.status,
     });
+  }
+
+  static Future<void> clearSleepRecords() async {
+    final userId = _requireUserId();
+    await client.from('sleep_records').delete().eq('user_id', userId);
   }
 
   static Future<DateTime?> getSleepStart() async {
@@ -272,14 +283,14 @@ class SupabaseService {
 
     final sleepStart = row?['sleep_start'];
     if (sleepStart == null) return null;
-    return DateTime.parse(sleepStart.toString());
+    return _localDateTime(sleepStart);
   }
 
   static Future<void> setSleepStart(DateTime time) async {
     final userId = _requireUserId();
     await client.from('active_sleep_sessions').upsert({
       'user_id': userId,
-      'sleep_start': time.toIso8601String(),
+      'sleep_start': _timestamp(time),
     });
   }
 

@@ -53,11 +53,11 @@ class SleepChart extends StatelessWidget {
     return LineChart(
       LineChartData(
         minY: 0,
-        maxY: 12,
+        maxY: 24,
         gridData: FlGridData(
           show: true,
           drawVerticalLine: false,
-          horizontalInterval: 2,
+          horizontalInterval: 4,
           getDrawingHorizontalLine: (value) =>
               FlLine(color: gridColor, strokeWidth: 1),
         ),

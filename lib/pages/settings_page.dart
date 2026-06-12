@@ -109,6 +109,7 @@ class _SettingsPageState extends State<SettingsPage> {
       if (!mounted) return;
       await NotificationService.scheduleSleepPlanReminder(
         context.read<SleepProvider>().schedule.targetSleepTime,
+        context.read<SleepProvider>().schedule.targetWakeTime,
       );
     } else {
       await NotificationService.cancelSleepPlanReminder();
@@ -118,11 +119,11 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _playBuiltIn(String trackId) async {
     await MusicService.playBuiltIn(trackId);
     setState(() {
-      _selectedMusic = trackId;
+      _selectedMusic = MusicService.isPlaying ? trackId : '';
       _isPlayingCustom = false;
       _playingCustomMusicId = '';
     });
-    await StorageService.setSelectedMusic(trackId);
+    await StorageService.setSelectedMusic(_selectedMusic);
   }
 
   Future<void> _uploadLagu() async {
@@ -323,6 +324,65 @@ class _SettingsPageState extends State<SettingsPage> {
         (_) => false,
       );
     }
+  }
+
+  Future<void> _resetSleepData() async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: isDark ? AppColors.cardDark : AppColors.cardLight,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: Text(
+          'Reset Data Tidur',
+          style: TextStyle(
+            color: isDark ? AppColors.textDark : AppColors.textLight,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        content: Text(
+          'Semua riwayat tidur dan sesi tidur aktif akan dihapus.',
+          style: TextStyle(
+            color: isDark
+                ? AppColors.textSecondaryDark
+                : AppColors.textSecondaryLight,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(
+              'Batal',
+              style: TextStyle(
+                color: isDark
+                    ? AppColors.textSecondaryDark
+                    : AppColors.textSecondaryLight,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(
+              'Reset',
+              style: TextStyle(
+                color:
+                    isDark ? AppColors.badSleepDark : AppColors.badSleepLight,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    await MusicService.stop();
+    await context.read<SleepProvider>().resetSleepData();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Data tidur berhasil direset.')),
+    );
   }
 
   @override
@@ -609,6 +669,42 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
               ),
               const SizedBox(height: 24),
+
+              // ── Reset Data ────────────────────────────────────────
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: _resetSleepData,
+                  icon: Icon(
+                    Icons.delete_sweep_rounded,
+                    color: isDark
+                        ? AppColors.badSleepDark
+                        : AppColors.badSleepLight,
+                  ),
+                  label: Text(
+                    'Reset Data Tidur',
+                    style: TextStyle(
+                      color: isDark
+                          ? AppColors.badSleepDark
+                          : AppColors.badSleepLight,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    side: BorderSide(
+                      color: isDark
+                          ? AppColors.badSleepDark
+                          : AppColors.badSleepLight,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
 
               // ── Logout ─────────────────────────────────────────────
               SizedBox(

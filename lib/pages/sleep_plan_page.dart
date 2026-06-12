@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/sleep_schedule_model.dart';
 import '../providers/profile_provider.dart';
 import '../providers/sleep_provider.dart';
+import '../services/alarm_service.dart';
 import '../utils/app_colors.dart';
 import '../utils/sleep_calculator.dart';
 import '../widgets/custom_button.dart';
@@ -19,6 +20,8 @@ class _SleepPlanPageState extends State<SleepPlanPage> {
   TimeOfDay _sleepTime = const TimeOfDay(hour: 22, minute: 0);
   TimeOfDay _wakeTime = const TimeOfDay(hour: 5, minute: 30);
   bool _saved = false;
+  bool _isSaving = false;
+  bool _isCreatingAlarm = false;
   int _selectedMenu = 0;
 
   @override
@@ -137,17 +140,26 @@ class _SleepPlanPageState extends State<SleepPlanPage> {
   }
 
   Future<void> _saveSchedule() async {
+    if (_isSaving) return;
     final provider = context.read<SleepProvider>();
     final schedule = SleepSchedule(
       name: 'Tidur ${_formatTime(_sleepTime)}',
       targetSleepTime: _formatTime(_sleepTime),
       targetWakeTime: _formatTime(_wakeTime),
     );
-    await provider.updateSchedule(schedule);
-    await provider.saveScheduleToList(schedule);
-    setState(() => _saved = true);
-    if (!mounted) return;
-    _showSnack('Jadwal berhasil disimpan dan menjadi jadwal aktif.');
+    setState(() => _isSaving = true);
+    try {
+      await provider.updateSchedule(schedule);
+      await provider.saveScheduleToList(schedule);
+      if (!mounted) return;
+      setState(() => _saved = true);
+      _showSnack('Jadwal berhasil disimpan dan menjadi jadwal aktif.');
+    } catch (error) {
+      if (!mounted) return;
+      _showSnack('Jadwal gagal disimpan. $error');
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 
   Future<void> _useSavedSchedule(SleepSchedule schedule) async {
@@ -176,6 +188,24 @@ class _SleepPlanPageState extends State<SleepPlanPage> {
     await provider.deleteSavedSchedule(schedule);
     if (!mounted) return;
     _showSnack('${schedule.name} dihapus dari jadwal tersimpan.');
+  }
+
+  Future<void> _createWakeAlarm() async {
+    if (_isCreatingAlarm) return;
+    setState(() => _isCreatingAlarm = true);
+    try {
+      await AlarmService.setWakeAlarm(
+        hour: _wakeTime.hour,
+        minute: _wakeTime.minute,
+      );
+      if (!mounted) return;
+      _showSnack('Alarm bangun ${_formatTime(_wakeTime)} berhasil dibuat.');
+    } catch (error) {
+      if (!mounted) return;
+      _showSnack('Alarm gagal dibuat. $error');
+    } finally {
+      if (mounted) setState(() => _isCreatingAlarm = false);
+    }
   }
 
   Future<bool?> _confirmDeleteSchedule(SleepSchedule schedule) {
@@ -313,11 +343,42 @@ class _SleepPlanPageState extends State<SleepPlanPage> {
                   textColor: textColor,
                   secondaryColor: secondaryColor,
                 ),
+                const SizedBox(height: 14),
+                OutlinedButton.icon(
+                  onPressed: _isCreatingAlarm ? null : _createWakeAlarm,
+                  icon: _isCreatingAlarm
+                      ? SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: primaryColor,
+                          ),
+                        )
+                      : Icon(Icons.alarm_add_rounded, color: primaryColor),
+                  label: Text(
+                    _isCreatingAlarm
+                        ? 'Membuat Alarm...'
+                        : 'Buat Alarm Bangun ${_formatTime(_wakeTime)}',
+                    style: TextStyle(
+                      color: primaryColor,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(52),
+                    side: BorderSide(color: primaryColor),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 32),
                 CustomButton(
-                  label: 'Simpan Jadwal',
+                  label: _isSaving ? 'Menyimpan...' : 'Simpan Jadwal',
                   onPressed: _saveSchedule,
                   icon: _saved ? Icons.check_rounded : Icons.save_outlined,
+                  isLoading: _isSaving,
                 ),
                 const SizedBox(height: 20),
                 if (_saved)

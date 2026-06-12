@@ -23,7 +23,7 @@ class _SleepReportPageState extends State<SleepReportPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) setState(() {});
     });
@@ -50,24 +50,20 @@ class _SleepReportPageState extends State<SleepReportPage>
     return Consumer<SleepProvider>(
       builder: (context, provider, _) {
         final allRecords = provider.records;
-        final weeklyRecords = _weeklyRecords(allRecords);
+        final weeklyRecords = _weeklyRecords(allRecords, _selectedDate);
         final monthlyRecords = _yearlyRecords(allRecords);
-        final dailyRecords = _recordsOnDate(allRecords, _selectedDate);
         final selectedTab = _tabController.index;
         final visibleRecords = switch (selectedTab) {
           1 => monthlyRecords,
-          2 => dailyRecords,
           _ => weeklyRecords,
         };
         final chartPoints = switch (selectedTab) {
           1 => _monthlyAverageChartPoints(allRecords),
-          2 => _dailyChartPoints(dailyRecords),
-          _ => _weeklyChartPoints(allRecords),
+          _ => _weeklyChartPoints(allRecords, _selectedDate),
         };
         final rangeLabel = switch (selectedTab) {
           1 => 'Rata-rata ${_selectedDate.year}',
-          2 => DateFormat('EEEE, d MMMM yyyy', 'id_ID').format(_selectedDate),
-          _ => _weekRangeLabel(DateTime.now()),
+          _ => _weekRangeLabel(_selectedDate),
         };
 
         return Scaffold(
@@ -139,7 +135,6 @@ class _SleepReportPageState extends State<SleepReportPage>
                       tabs: const [
                         Tab(text: 'Mingguan'),
                         Tab(text: 'Bulanan'),
-                        Tab(text: 'Harian'),
                       ],
                     ),
                   ),
@@ -311,20 +306,20 @@ class _SleepReportPageState extends State<SleepReportPage>
     );
     if (picked == null) return;
     setState(() => _selectedDate = picked);
-    _tabController.animateTo(2);
+    _tabController.animateTo(0);
   }
 
-  List<SleepRecord> _weeklyRecords(List<SleepRecord> records) {
-    final now = DateTime.now();
+  List<SleepRecord> _weeklyRecords(List<SleepRecord> records, DateTime date) {
+    final end = DateTime(date.year, date.month, date.day);
     final weekAgo = DateTime(
-      now.year,
-      now.month,
-      now.day,
+      end.year,
+      end.month,
+      end.day,
     ).subtract(const Duration(days: 6));
     return records.where((record) {
       final date =
           DateTime(record.date.year, record.date.month, record.date.day);
-      return !date.isBefore(weekAgo) && !date.isAfter(now);
+      return !date.isBefore(weekAgo) && !date.isAfter(end);
     }).toList()
       ..sort((a, b) => a.date.compareTo(b.date));
   }
@@ -336,12 +331,15 @@ class _SleepReportPageState extends State<SleepReportPage>
       ..sort((a, b) => a.date.compareTo(b.date));
   }
 
-  List<SleepChartPoint> _weeklyChartPoints(List<SleepRecord> records) {
-    final today = DateTime.now();
+  List<SleepChartPoint> _weeklyChartPoints(
+    List<SleepRecord> records,
+    DateTime date,
+  ) {
+    final selected = DateTime(date.year, date.month, date.day);
     final start = DateTime(
-      today.year,
-      today.month,
-      today.day,
+      selected.year,
+      selected.month,
+      selected.day,
     ).subtract(const Duration(days: 6));
     final points = <SleepChartPoint>[];
     var hasRecords = false;
@@ -377,17 +375,6 @@ class _SleepReportPageState extends State<SleepReportPage>
         durationMinutes: _averageDuration(monthRecords),
       );
     });
-  }
-
-  List<SleepChartPoint> _dailyChartPoints(List<SleepRecord> records) {
-    return records
-        .map(
-          (record) => SleepChartPoint(
-            label: DateFormat('HH:mm', 'id_ID').format(record.sleepStart),
-            durationMinutes: record.durationMinutes,
-          ),
-        )
-        .toList();
   }
 
   int _averageDuration(List<SleepRecord> records) {

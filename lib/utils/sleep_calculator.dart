@@ -1,12 +1,11 @@
 class SleepCalculator {
+  static const int maxReportDurationMinutes = 24 * 60;
+
   /// Hitung durasi tidur dalam menit
   /// Mendukung tidur yang melewati tengah malam
   static int calculateDurationMinutes(DateTime start, DateTime end) {
-    Duration diff = end.difference(start);
-    // Jika negatif (misal: bangun keesokan harinya tapi end < start)
-    if (diff.isNegative) {
-      diff = end.add(const Duration(days: 1)).difference(start);
-    }
+    final diff = end.difference(start);
+    if (diff.isNegative) return 0;
     return diff.inMinutes;
   }
 
@@ -21,7 +20,11 @@ class SleepCalculator {
 
   /// Format durasi dalam bentuk desimal jam (misal 7.5)
   static double durationInHours(int minutes) {
-    return minutes / 60.0;
+    return normalizeReportDuration(minutes) / 60.0;
+  }
+
+  static int normalizeReportDuration(int minutes) {
+    return minutes.clamp(0, maxReportDurationMinutes).toInt();
   }
 
   /// Tentukan status tidur berdasarkan durasi

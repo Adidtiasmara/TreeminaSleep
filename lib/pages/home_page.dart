@@ -31,6 +31,7 @@ class _HomePageState extends State<HomePage> {
   String _userName = '';
   DateTime _now = DateTime.now();
   late int _funFactIndex;
+  bool _isWakingUp = false;
 
   static const List<_FunFactData> _funFacts = [
     _FunFactData(
@@ -223,28 +224,42 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _onWakeUp(SleepProvider provider) async {
+    if (_isWakingUp) return;
+    setState(() => _isWakingUp = true);
     _stopTimer();
-    final record = await provider.wakeUp();
-    if (!mounted) return;
+    SleepRecord? record;
+    try {
+      record = await provider.wakeUp();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Wake Up gagal diproses. $error'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isWakingUp = false);
+    }
 
-    if (record != null && StorageService.isNotificationEnabled()) {
+    if (!mounted || record == null) return;
+    if (StorageService.isNotificationEnabled()) {
       await NotificationService.showSleepStatusNotification(record.status);
     }
 
-    if (record != null) {
-      _showWakeUpDialog(record);
-    }
+    _showWakeUpDialog(record);
   }
 
   void _showWakeUpDialog(SleepRecord record) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final greeting = _wakeGreeting(record.wakeUp);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: isDark ? AppColors.cardDark : AppColors.cardLight,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
-          'Selamat Pagi! ☀️',
+          greeting,
           style: TextStyle(
             fontWeight: FontWeight.w700,
             color: isDark ? AppColors.textDark : AppColors.textLight,
@@ -293,6 +308,14 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
     );
+  }
+
+  String _wakeGreeting(DateTime time) {
+    final hour = time.hour;
+    if (hour >= 4 && hour < 11) return 'Selamat Pagi! ☀️';
+    if (hour >= 11 && hour < 15) return 'Selamat Siang! 🌤️';
+    if (hour >= 15 && hour < 18) return 'Selamat Sore! 🌇';
+    return 'Selamat Malam! 🌙';
   }
 
   @override
@@ -420,6 +443,7 @@ class _HomePageState extends State<HomePage> {
                           elapsed: _elapsed,
                           sleepStart: provider.sleepStart!,
                           isDark: isDark,
+                          isLoading: _isWakingUp,
                           onWakeUp: () => _onWakeUp(provider),
                         )
                       else
@@ -1406,12 +1430,14 @@ class _SleepingCard extends StatelessWidget {
   final Duration elapsed;
   final DateTime sleepStart;
   final bool isDark;
+  final bool isLoading;
   final VoidCallback onWakeUp;
 
   const _SleepingCard({
     required this.elapsed,
     required this.sleepStart,
     required this.isDark,
+    required this.isLoading,
     required this.onWakeUp,
   });
 
@@ -1486,10 +1512,11 @@ class _SleepingCard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           CustomButton(
-            label: 'Wake Up',
+            label: isLoading ? 'Memproses...' : 'Wake Up',
             onPressed: onWakeUp,
             icon: Icons.wb_sunny_outlined,
             backgroundColor: badColor,
+            isLoading: isLoading,
           ),
         ],
       ),
