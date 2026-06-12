@@ -23,7 +23,7 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   Timer? _timer;
   Timer? _funFactTimer;
   Timer? _clockTimer;
@@ -172,6 +172,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadUserName();
     _funFactIndex = Random().nextInt(_funFacts.length);
     _funFactTimer = Timer.periodic(const Duration(seconds: 14), (_) {
@@ -185,6 +186,23 @@ class _HomePageState extends State<HomePage> {
     final provider = context.read<SleepProvider>();
     if (provider.isSleeping && provider.sleepStart != null) {
       _startTimer(provider.sleepStart!);
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+    unawaited(_syncSleepSessionFromStorage());
+  }
+
+  Future<void> _syncSleepSessionFromStorage() async {
+    final provider = context.read<SleepProvider>();
+    await provider.syncSleepSession();
+    if (!mounted) return;
+    if (provider.isSleeping && provider.sleepStart != null) {
+      _startTimer(provider.sleepStart!);
+    } else {
+      _stopTimer();
     }
   }
 
@@ -212,6 +230,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
     _funFactTimer?.cancel();
     _clockTimer?.cancel();

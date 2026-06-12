@@ -17,6 +17,7 @@ class StorageService {
   static const String _keyAge = 'user_age';
   static const String _keyCurrentSleepStart = 'current_sleep_start';
   static const String _keyIsSleeping = 'is_sleeping';
+  static const String _keyPendingNotificationWake = 'pending_notification_wake';
 
   static SharedPreferences? _prefs;
 
@@ -136,6 +137,18 @@ class StorageService {
     await prefs.setBool(_keyIsSleeping, false);
   }
 
+  static Future<void> clearPendingNotificationWake() async {
+    await prefs.remove(_keyPendingNotificationWake);
+  }
+
+  static Future<void> setPendingNotificationWake(bool value) async {
+    await prefs.setBool(_keyPendingNotificationWake, value);
+  }
+
+  static bool hasPendingNotificationWake() {
+    return prefs.getBool(_keyPendingNotificationWake) ?? false;
+  }
+
   // ── Settings ──────────────────────────────────────────
   static Future<void> setNotificationEnabled(bool value) async {
     await prefs.setBool(_keyNotificationEnabled, value);
@@ -173,5 +186,6 @@ class StorageService {
   static Future<void> logout() async {
     await prefs.setBool(_keyIsLoggedIn, false);
     await clearSleepSession();
+    await clearPendingNotificationWake();
   }
 }

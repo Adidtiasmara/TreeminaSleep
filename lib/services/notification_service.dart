@@ -6,11 +6,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
-import '../models/sleep_record_model.dart';
-import '../utils/sleep_calculator.dart';
 import 'alarm_service.dart';
 import 'storage_service.dart';
-import 'supabase_service.dart';
 
 const String _wakeUpActionId = 'wake_up_from_notification';
 const String _setWakeAlarmActionId = 'set_wake_alarm_from_notification';
@@ -26,9 +23,13 @@ class NotificationService {
   static const int sleepPlanReminderNotificationId = 1003;
   static const MethodChannel _nativeChannel =
       MethodChannel('treemina_sleep/notifications');
+  static final StreamController<void> _sleepSessionUpdates =
+      StreamController<void>.broadcast();
 
   static final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
+
+  static Stream<void> get sleepSessionUpdates => _sleepSessionUpdates.stream;
 
   static Future<void> init() async {
     tz_data.initializeTimeZones();
@@ -63,7 +64,9 @@ class NotificationService {
   ) async {
     if (response.actionId == _wakeUpActionId) {
       try {
-        await _wakeUpFromNotification();
+        await StorageService.init();
+        await StorageService.setPendingNotificationWake(true);
+        _sleepSessionUpdates.add(null);
       } catch (_) {
         // Action callbacks can run while the app is waking up in the background.
       }
@@ -217,7 +220,25 @@ class NotificationService {
     return target;
   }
 
-  static Future<void> showSleepSessionNotification(DateTime sleepStart) async {
+  static Future<void> showSleepSessionNotification(
+    DateTime sleepStart, {
+    String? targetWakeTime,
+  }) async {
+    final actions = <AndroidNotificationAction>[
+      const AndroidNotificationAction(
+        _wakeUpActionId,
+        'Wake Up',
+        showsUserInterface: true,
+        cancelNotification: false,
+      ),
+      if (targetWakeTime != null)
+        AndroidNotificationAction(
+          _setWakeAlarmActionId,
+          'Buat Alarm ${_formatReminderTime(targetWakeTime)}',
+          showsUserInterface: true,
+          cancelNotification: false,
+        ),
+    ];
     final androidDetails = AndroidNotificationDetails(
       'active_sleep_session_channel',
       'Active Sleep Session',
@@ -235,14 +256,7 @@ class NotificationService {
       category: AndroidNotificationCategory.alarm,
       playSound: false,
       enableVibration: false,
-      actions: [
-        const AndroidNotificationAction(
-          _wakeUpActionId,
-          'Wake Up',
-          showsUserInterface: false,
-          cancelNotification: true,
-        ),
-      ],
+      actions: actions,
     );
     const iosDetails = DarwinNotificationDetails(
       presentAlert: true,
@@ -259,45 +273,14 @@ class NotificationService {
     await _plugin.show(
       sleepSessionNotificationId,
       'Sedang Tidur',
-      'Sesi tidur berjalan. Tekan Wake Up saat kamu bangun.',
+      targetWakeTime == null
+          ? 'Sesi tidur berjalan. Tekan Wake Up saat kamu bangun.'
+          : 'Sesi tidur berjalan. Alarm bangun ${_formatReminderTime(targetWakeTime)}.',
       details,
-      payload: 'sleep_session',
+      payload: targetWakeTime == null
+          ? 'sleep_session'
+          : 'sleep_session|wake=$targetWakeTime',
     );
-  }
-
-  static Future<void> _wakeUpFromNotification() async {
-    await StorageService.init();
-    await SupabaseService.init();
-
-    final useSupabase = SupabaseService.isReady && SupabaseService.isLoggedIn;
-    final sleepStart = useSupabase
-        ? await SupabaseService.getSleepStart()
-        : StorageService.getSleepStart();
-
-    if (sleepStart == null) return;
-
-    final now = DateTime.now();
-    final duration = SleepCalculator.calculateDurationMinutes(sleepStart, now);
-    final status = SleepCalculator.getSleepStatus(duration);
-    final record = SleepRecord(
-      id: now.millisecondsSinceEpoch.toString(),
-      date: now,
-      sleepStart: sleepStart,
-      wakeUp: now,
-      durationMinutes: duration,
-      status: status,
-    );
-
-    if (useSupabase) {
-      await SupabaseService.addSleepRecord(record);
-      await SupabaseService.clearSleepSession();
-    } else {
-      await StorageService.addSleepRecord(record);
-      await StorageService.clearSleepSession();
-    }
-
-    await cancelSleepSessionNotification();
-    await showSleepStatusNotification(status);
   }
 
   static Future<void> cancelSleepSessionNotification() async {

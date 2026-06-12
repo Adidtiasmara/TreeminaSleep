@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../models/sleep_record_model.dart';
 import '../models/sleep_schedule_model.dart';
@@ -13,6 +15,7 @@ class SleepProvider extends ChangeNotifier {
   bool _isSleeping = false;
   DateTime? _sleepStart;
   SleepRecord? _lastRecord;
+  StreamSubscription<void>? _notificationWakeSubscription;
 
   List<SleepRecord> get records => _records;
   List<SleepSchedule> get savedSchedules => _savedSchedules;
@@ -22,6 +25,10 @@ class SleepProvider extends ChangeNotifier {
   SleepRecord? get lastRecord => _lastRecord;
 
   SleepProvider() {
+    _notificationWakeSubscription =
+        NotificationService.sleepSessionUpdates.listen((_) {
+      unawaited(syncSleepSession());
+    });
     _load();
   }
 
@@ -39,10 +46,18 @@ class SleepProvider extends ChangeNotifier {
       _isSleeping = StorageService.isSleeping();
       _sleepStart = StorageService.getSleepStart();
     }
+    if (StorageService.hasPendingNotificationWake()) {
+      await syncSleepSession();
+      await _useDeviceClockForFirstSchedule();
+      return;
+    }
     if (_isSleeping &&
         _sleepStart != null &&
         StorageService.isNotificationEnabled()) {
-      await NotificationService.showSleepSessionNotification(_sleepStart!);
+      await NotificationService.showSleepSessionNotification(
+        _sleepStart!,
+        targetWakeTime: _schedule.targetWakeTime,
+      );
     }
     await _useDeviceClockForFirstSchedule();
     if (_records.isNotEmpty) _lastRecord = _records.first;
@@ -112,12 +127,15 @@ class SleepProvider extends ChangeNotifier {
     _isSleeping = true;
     if (SupabaseService.isConfigured && SupabaseService.isLoggedIn) {
       await SupabaseService.setSleepStart(now);
-    } else {
-      await StorageService.setSleepStart(now);
     }
+    await StorageService.setSleepStart(now);
+    await StorageService.setPendingNotificationWake(false);
     if (StorageService.isNotificationEnabled()) {
       await NotificationService.requestPermission();
-      await NotificationService.showSleepSessionNotification(now);
+      await NotificationService.showSleepSessionNotification(
+        now,
+        targetWakeTime: _schedule.targetWakeTime,
+      );
     }
     notifyListeners();
   }
@@ -147,9 +165,9 @@ class SleepProvider extends ChangeNotifier {
     }
     if (SupabaseService.isConfigured && SupabaseService.isLoggedIn) {
       await SupabaseService.clearSleepSession();
-    } else {
-      await StorageService.clearSleepSession();
     }
+    await StorageService.clearSleepSession();
+    await StorageService.setPendingNotificationWake(false);
     await NotificationService.cancelSleepSessionNotification();
 
     _records = SupabaseService.isConfigured && SupabaseService.isLoggedIn
@@ -171,6 +189,85 @@ class SleepProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> syncSleepSession() async {
+    final hadPendingWake = StorageService.hasPendingNotificationWake();
+
+    if (hadPendingWake) {
+      await _finishPendingNotificationWake();
+      return;
+    }
+
+    _records = SupabaseService.isConfigured && SupabaseService.isLoggedIn
+        ? await SupabaseService.getSleepRecords()
+        : StorageService.getSleepRecords();
+    _lastRecord = _records.isNotEmpty ? _records.first : null;
+
+    if (SupabaseService.isConfigured &&
+        SupabaseService.isLoggedIn &&
+        !hadPendingWake) {
+      _sleepStart = await SupabaseService.getSleepStart();
+      _isSleeping = _sleepStart != null;
+    } else {
+      _isSleeping = StorageService.isSleeping();
+      _sleepStart = StorageService.getSleepStart();
+    }
+
+    if (!_isSleeping) {
+      _sleepStart = null;
+      await NotificationService.cancelSleepSessionNotification();
+    }
+
+    notifyListeners();
+  }
+
+  Future<void> _finishPendingNotificationWake() async {
+    var sleepStart = StorageService.getSleepStart();
+    if (sleepStart == null &&
+        SupabaseService.isConfigured &&
+        SupabaseService.isLoggedIn) {
+      sleepStart = await SupabaseService.getSleepStart();
+    }
+
+    if (sleepStart != null) {
+      final now = DateTime.now();
+      final duration = SleepCalculator.calculateDurationMinutes(
+        sleepStart,
+        now,
+      );
+      final status = SleepCalculator.getSleepStatus(duration);
+      final record = SleepRecord(
+        id: now.millisecondsSinceEpoch.toString(),
+        date: now,
+        sleepStart: sleepStart,
+        wakeUp: now,
+        durationMinutes: duration,
+        status: status,
+      );
+
+      if (SupabaseService.isConfigured && SupabaseService.isLoggedIn) {
+        await SupabaseService.addSleepRecord(record);
+        await SupabaseService.clearSleepSession();
+      }
+      await StorageService.addSleepRecord(record);
+      _lastRecord = record;
+    } else if (SupabaseService.isConfigured && SupabaseService.isLoggedIn) {
+      await SupabaseService.clearSleepSession();
+    }
+
+    await StorageService.clearSleepSession();
+    await StorageService.setPendingNotificationWake(false);
+    await NotificationService.cancelSleepSessionNotification();
+
+    _records = SupabaseService.isConfigured && SupabaseService.isLoggedIn
+        ? await SupabaseService.getSleepRecords()
+        : StorageService.getSleepRecords();
+    _lastRecord = _records.isNotEmpty ? _records.first : _lastRecord;
+    _isSleeping = false;
+    _sleepStart = null;
+
+    notifyListeners();
+  }
+
   Future<void> resetSleepData() async {
     if (SupabaseService.isConfigured && SupabaseService.isLoggedIn) {
       await SupabaseService.clearSleepRecords();
@@ -178,6 +275,7 @@ class SleepProvider extends ChangeNotifier {
     }
     await StorageService.clearSleepRecords();
     await StorageService.clearSleepSession();
+    await StorageService.clearPendingNotificationWake();
     await NotificationService.cancelSleepSessionNotification();
 
     _records = [];
@@ -194,5 +292,11 @@ class SleepProvider extends ChangeNotifier {
     final weekAgo = now.subtract(const Duration(days: 7));
     return _records.where((r) => r.date.isAfter(weekAgo)).toList()
       ..sort((a, b) => a.date.compareTo(b.date));
+  }
+
+  @override
+  void dispose() {
+    _notificationWakeSubscription?.cancel();
+    super.dispose();
   }
 }
