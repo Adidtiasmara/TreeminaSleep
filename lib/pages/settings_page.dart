@@ -12,6 +12,7 @@ import '../utils/app_colors.dart';
 import '../utils/sleep_calculator.dart';
 import '../widgets/theme_selector.dart';
 import '../widgets/sleep_visuals.dart';
+import 'about_app_page.dart';
 import 'login_page.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -666,6 +667,37 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
                     ),
                   ],
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // ── About Aplikasi ─────────────────────────────────────
+              GestureDetector(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const AboutAppPage()),
+                  );
+                },
+                child: _SettingsCard(
+                  isDark: isDark,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Tentang TreeminaSleep',
+                          style: TextStyle(
+                            color: textColor,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        color: secondaryColor,
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 24),

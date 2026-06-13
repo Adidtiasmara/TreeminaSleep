@@ -351,7 +351,7 @@ class _SleepReportPageState extends State<SleepReportPage>
       points.add(
         SleepChartPoint(
           label: DateFormat('E', 'id_ID').format(day),
-          durationMinutes: _averageDuration(dayRecords),
+          durationMinutes: _totalDuration(dayRecords),
         ),
       );
     }
@@ -372,18 +372,31 @@ class _SleepReportPageState extends State<SleepReportPage>
       return SleepChartPoint(
         label: DateFormat('MMM', 'id_ID')
             .format(DateTime(_selectedDate.year, month)),
-        durationMinutes: _averageDuration(monthRecords),
+        durationMinutes: _averageDailyDuration(monthRecords),
       );
     });
   }
 
-  int _averageDuration(List<SleepRecord> records) {
-    if (records.isEmpty) return 0;
-    final total = records.fold<int>(
+  int _totalDuration(List<SleepRecord> records) {
+    return records.fold<int>(
       0,
       (sum, record) => sum + record.durationMinutes,
     );
-    return (total / records.length).round();
+  }
+
+  int _averageDailyDuration(List<SleepRecord> records) {
+    if (records.isEmpty) return 0;
+    final groupedByDay = <DateTime, List<SleepRecord>>{};
+    for (final record in records) {
+      final day =
+          DateTime(record.date.year, record.date.month, record.date.day);
+      groupedByDay.putIfAbsent(day, () => []).add(record);
+    }
+    final total = groupedByDay.values.fold<int>(
+      0,
+      (sum, dayRecords) => sum + _totalDuration(dayRecords),
+    );
+    return (total / groupedByDay.length).round();
   }
 
   List<SleepRecord> _recordsOnDate(List<SleepRecord> records, DateTime date) {
