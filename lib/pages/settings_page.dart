@@ -128,26 +128,18 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _uploadLagu() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.audio,
-      allowMultiple: false,
-      withData: true,
-    );
-    if (result != null) {
-      final file = result.files.single;
+    final file = await FilePicker.pickFile(type: FileType.audio);
+    if (file != null) {
       final path = file.path;
       setState(() => _isUploadingMusic = true);
       if (SupabaseService.isConfigured && SupabaseService.isLoggedIn) {
         try {
-          if (file.bytes == null && path == null) {
-            throw Exception('File lagu tidak bisa dibaca dari perangkat ini.');
-          }
-          final uploaded = file.bytes != null
-              ? await SupabaseService.uploadCustomMusicBytes(
-                  bytes: file.bytes!,
+          final uploaded = path != null
+              ? await SupabaseService.uploadCustomMusic(path)
+              : await SupabaseService.uploadCustomMusicBytes(
+                  bytes: await file.readAsBytes(),
                   fileName: file.name,
-                )
-              : await SupabaseService.uploadCustomMusic(path!);
+                );
           if (!mounted) return;
           setState(() {
             _customMusics = [uploaded, ..._customMusics];
