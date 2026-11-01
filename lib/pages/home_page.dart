@@ -360,11 +360,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             children: [
               if (isDark)
                 const Positioned(
-                  top: -70,
+                  top: -90,
                   left: 0,
                   right: 0,
                   child: SizedBox(
-                    height: 400,
+                    height: 420,
                     child: NightScape(isDark: true),
                   ),
                 ),
