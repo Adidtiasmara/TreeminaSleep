@@ -108,14 +108,33 @@ class _LoginPageState extends State<LoginPage> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
-                            Icons.eco_outlined,
-                            color: isDark
-                                ? AppColors.primaryDark
-                                : const Color(0xFFA6DDB2),
-                            size: 70,
+                          Container(
+                            width: 88,
+                            height: 88,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(24),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(.24),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 10),
+                                ),
+                              ],
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: Image.asset(
+                              'assets/images/app-icon.png',
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Icon(
+                                Icons.eco_outlined,
+                                color: isDark
+                                    ? AppColors.primaryDark
+                                    : const Color(0xFFA6DDB2),
+                                size: 70,
+                              ),
+                            ),
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 16),
                           Text(
                             'Treemina\nSleep',
                             textAlign: TextAlign.center,
