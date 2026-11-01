@@ -153,57 +153,59 @@ class _RegisterPageState extends State<RegisterPage> {
                       isDark: isDark,
                       child: Stack(
                         children: [
-                          Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                width: 88,
-                                height: 88,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(24),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(.24),
-                                      blurRadius: 20,
-                                      offset: const Offset(0, 10),
+                          Positioned.fill(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  width: 88,
+                                  height: 88,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(24),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(.24),
+                                        blurRadius: 20,
+                                        offset: const Offset(0, 10),
+                                      ),
+                                    ],
+                                  ),
+                                  clipBehavior: Clip.antiAlias,
+                                  child: Image.asset(
+                                    'assets/images/app-icon.png',
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Icon(
+                                      Icons.eco_rounded,
+                                      color: isDark
+                                          ? AppColors.primaryDark
+                                          : const Color(0xFFA6DDB2),
+                                      size: 70,
                                     ),
-                                  ],
-                                ),
-                                clipBehavior: Clip.antiAlias,
-                                child: Image.asset(
-                                  'assets/images/app-icon.png',
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => Icon(
-                                    Icons.eco_rounded,
-                                    color: isDark
-                                        ? AppColors.primaryDark
-                                        : const Color(0xFFA6DDB2),
-                                    size: 70,
                                   ),
                                 ),
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'Treemina\nSleep',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(.96),
-                                  fontSize: 38,
-                                  height: 1.05,
-                                  fontWeight: FontWeight.w800,
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Treemina\nSleep',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(.96),
+                                    fontSize: 38,
+                                    height: 1.05,
+                                    fontWeight: FontWeight.w800,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'Better Sleep,\nBetter You',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(.9),
-                                  fontSize: 16,
-                                  height: 1.35,
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Better Sleep,\nBetter You',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(.9),
+                                    fontSize: 16,
+                                    height: 1.35,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                           Positioned(
                             top: 8,
@@ -305,7 +307,8 @@ class _RegisterPageState extends State<RegisterPage> {
                           if (v == null || v.isEmpty) {
                             return 'Password tidak boleh kosong';
                           }
-                          if (v.length < 6) return 'Password minimal 6 karakter';
+                          if (v.length < 6)
+                            return 'Password minimal 6 karakter';
                           return null;
                         },
                       ),
