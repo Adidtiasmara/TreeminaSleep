@@ -134,10 +134,24 @@ class _NavItem extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              isActive ? activeIcon : icon,
-              color: isActive ? selectedColor : unselectedColor,
-              size: isActive ? 28 : 24,
+            SizedBox(
+              width: 28,
+              height: 28,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 250),
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
+                transitionBuilder: (child, animation) => FadeTransition(
+                  opacity: animation,
+                  child: ScaleTransition(scale: animation, child: child),
+                ),
+                child: Icon(
+                  isActive ? activeIcon : icon,
+                  key: ValueKey(isActive),
+                  color: isActive ? selectedColor : unselectedColor,
+                  size: isActive ? 26 : 24,
+                ),
+              ),
             ),
             const SizedBox(height: 3),
             AnimatedDefaultTextStyle(

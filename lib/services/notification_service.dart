@@ -307,16 +307,16 @@ class NotificationService {
 
     switch (status) {
       case 'Excellent Sleep':
-        title = 'Excellent Sleep 😊';
+        title = 'Excellent Sleep';
         body = 'Tidurmu cukup. Pertahankan pola tidur yang baik.';
         break;
       case 'Bad Sleep':
-        title = 'Bad Sleep 😟';
+        title = 'Bad Sleep';
         body =
             'Kamu kurang tidur hari ini. Cobalah tidur lebih awal malam ini.';
         break;
       case 'Over Sleep':
-        title = 'Over Sleep 😴';
+        title = 'Over Sleep';
         body = 'Kamu tidur lebih lama dari kebutuhan normal.';
         break;
       default:

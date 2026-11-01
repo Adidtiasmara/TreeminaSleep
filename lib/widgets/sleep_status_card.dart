@@ -28,16 +28,16 @@ class SleepStatusCard extends StatelessWidget {
     }
   }
 
-  String _getEmoji() {
+  IconData _getIcon() {
     switch (status) {
       case 'Excellent Sleep':
-        return '😊';
+        return Icons.check_circle_rounded;
       case 'Bad Sleep':
-        return '😟';
+        return Icons.error_outline_rounded;
       case 'Over Sleep':
-        return '😴';
+        return Icons.snooze_rounded;
       default:
-        return '💤';
+        return Icons.bedtime_rounded;
     }
   }
 
@@ -75,7 +75,7 @@ class SleepStatusCard extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             child: Center(
-              child: Text(_getEmoji(), style: const TextStyle(fontSize: 22)),
+              child: Icon(_getIcon(), color: color, size: 24),
             ),
           ),
           const SizedBox(width: 14),

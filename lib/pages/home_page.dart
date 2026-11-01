@@ -331,10 +331,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   String _wakeGreeting(DateTime time) {
     final hour = time.hour;
-    if (hour >= 4 && hour < 11) return 'Selamat Pagi! ☀️';
-    if (hour >= 11 && hour < 15) return 'Selamat Siang! 🌤️';
-    if (hour >= 15 && hour < 18) return 'Selamat Sore! 🌇';
-    return 'Selamat Malam! 🌙';
+    if (hour >= 4 && hour < 11) return 'Selamat Pagi!';
+    if (hour >= 11 && hour < 15) return 'Selamat Siang!';
+    if (hour >= 15 && hour < 18) return 'Selamat Sore!';
+    return 'Selamat Malam!';
   }
 
   @override
@@ -389,7 +389,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                   ),
                                 ),
                                 Text(
-                                  'Treemina Sleep, $_userName 👋',
+                                  'Treemina Sleep, $_userName',
                                   style: TextStyle(
                                     color: textColor,
                                     fontSize: 20,
@@ -457,21 +457,43 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                       const SizedBox(height: 14),
 
                       // ── Sedang Tidur / Start Sleep ────────────────────
-                      if (isSleeping)
-                        _SleepingCard(
-                          elapsed: _elapsed,
-                          sleepStart: provider.sleepStart!,
-                          isDark: isDark,
-                          isLoading: _isWakingUp,
-                          onWakeUp: () => _onWakeUp(provider),
-                        )
-                      else
-                        _StartSleepCard(
-                          targetSleepTime: schedule.targetSleepTime,
-                          now: _now,
-                          isDark: isDark,
-                          onStartSleep: () => _onStartSleep(provider),
+                      AnimatedSize(
+                        duration: const Duration(milliseconds: 350),
+                        curve: Curves.easeOutCubic,
+                        alignment: Alignment.topCenter,
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 350),
+                          switchInCurve: Curves.easeOutCubic,
+                          switchOutCurve: Curves.easeInCubic,
+                          transitionBuilder: (child, animation) =>
+                              FadeTransition(
+                            opacity: animation,
+                            child: SlideTransition(
+                              position: Tween<Offset>(
+                                begin: const Offset(0, 0.04),
+                                end: Offset.zero,
+                              ).animate(animation),
+                              child: child,
+                            ),
+                          ),
+                          child: isSleeping
+                              ? _SleepingCard(
+                                  key: const ValueKey('sleeping'),
+                                  elapsed: _elapsed,
+                                  sleepStart: provider.sleepStart!,
+                                  isDark: isDark,
+                                  isLoading: _isWakingUp,
+                                  onWakeUp: () => _onWakeUp(provider),
+                                )
+                              : _StartSleepCard(
+                                  key: const ValueKey('start'),
+                                  targetSleepTime: schedule.targetSleepTime,
+                                  now: _now,
+                                  isDark: isDark,
+                                  onStartSleep: () => _onStartSleep(provider),
+                                ),
                         ),
+                      ),
                       const SizedBox(height: 14),
 
                       _FunFactHighlight(
@@ -558,6 +580,7 @@ class _StartSleepCard extends StatelessWidget {
   final VoidCallback onStartSleep;
 
   const _StartSleepCard({
+    super.key,
     required this.targetSleepTime,
     required this.now,
     required this.isDark,
@@ -731,6 +754,18 @@ class _FunFactHighlight extends StatelessWidget {
 
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 450),
+      switchInCurve: Curves.easeOutCubic,
+      switchOutCurve: Curves.easeInCubic,
+      transitionBuilder: (child, animation) => FadeTransition(
+        opacity: animation,
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0, 0.03),
+            end: Offset.zero,
+          ).animate(animation),
+          child: child,
+        ),
+      ),
       child: Container(
         key: ValueKey(fact.title),
         width: double.infinity,
@@ -1414,13 +1449,19 @@ class _HeroImageCard extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          Image.asset(
-            awake
-                ? 'assets/images/wake-hero-tight.png'
-                : 'assets/images/sleep-hero-tight.png',
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) =>
-                SleepHeroArt(isDark: isDark, awake: awake),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 450),
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeInCubic,
+            child: Image.asset(
+              key: ValueKey(awake ? 'awake' : 'sleep'),
+              awake
+                  ? 'assets/images/wake-hero-tight.png'
+                  : 'assets/images/sleep-hero-tight.png',
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) =>
+                  SleepHeroArt(isDark: isDark, awake: awake),
+            ),
           ),
           DecoratedBox(
             decoration: BoxDecoration(
@@ -1453,6 +1494,7 @@ class _SleepingCard extends StatelessWidget {
   final VoidCallback onWakeUp;
 
   const _SleepingCard({
+    super.key,
     required this.elapsed,
     required this.sleepStart,
     required this.isDark,
