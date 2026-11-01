@@ -31,7 +31,12 @@ class NotificationService {
 
   static Stream<void> get sleepSessionUpdates => _sleepSessionUpdates.stream;
 
+  /// flutter_local_notifications has no web implementation; plugin calls would
+  /// throw MissingPluginException when the app runs in a browser.
+  static bool get _notificationsSupported => !kIsWeb;
+
   static Future<void> init() async {
+    if (!_notificationsSupported) return;
     tz_data.initializeTimeZones();
     tz.setLocalLocation(tz.getLocation('Asia/Jakarta'));
 
@@ -85,6 +90,7 @@ class NotificationService {
     String targetSleepTime,
     String targetWakeTime,
   ) async {
+    if (!_notificationsSupported) return;
     await _safeCancel(
       sleepPlanReminderNotificationId,
       clearCacheOnFailure: true,
@@ -137,6 +143,7 @@ class NotificationService {
   }
 
   static Future<void> cancelSleepPlanReminder() async {
+    if (!_notificationsSupported) return;
     await _safeCancel(sleepPlanReminderNotificationId);
   }
 
@@ -224,6 +231,7 @@ class NotificationService {
     DateTime sleepStart, {
     String? targetWakeTime,
   }) async {
+    if (!_notificationsSupported) return;
     final actions = <AndroidNotificationAction>[
       const AndroidNotificationAction(
         _wakeUpActionId,
@@ -284,10 +292,12 @@ class NotificationService {
   }
 
   static Future<void> cancelSleepSessionNotification() async {
+    if (!_notificationsSupported) return;
     await _safeCancel(sleepSessionNotificationId);
   }
 
   static Future<void> requestPermission() async {
+    if (!_notificationsSupported) return;
     if (defaultTargetPlatform == TargetPlatform.android) {
       await _plugin
           .resolvePlatformSpecificImplementation<
@@ -302,6 +312,7 @@ class NotificationService {
   }
 
   static Future<void> showSleepStatusNotification(String status) async {
+    if (!_notificationsSupported) return;
     String title;
     String body;
 
