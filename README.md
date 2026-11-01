@@ -7,7 +7,7 @@
 ![Flutter](https://img.shields.io/badge/Flutter-Mobile_App-02569B?style=for-the-badge&logo=flutter&logoColor=white)
 ![Dart](https://img.shields.io/badge/Dart-Programming-0175C2?style=for-the-badge&logo=dart&logoColor=white)
 ![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20iOS-34A853?style=for-the-badge)
-![Version](https://img.shields.io/badge/Version-1.0.0%2B1-6C63FF?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-0.1.0%2B1-6C63FF?style=for-the-badge)
 
 </div>
 
