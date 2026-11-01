@@ -359,10 +359,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           body: Stack(
             children: [
               if (isDark)
-                const Positioned.fill(
-                  bottom: null,
+                const Positioned(
+                  top: -70,
+                  left: 0,
+                  right: 0,
                   child: SizedBox(
-                    height: 330,
+                    height: 400,
                     child: NightScape(isDark: true),
                   ),
                 ),
@@ -385,11 +387,14 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                   'Welcome to',
                                   style: TextStyle(
                                     color: secondaryColor,
-                                    fontSize: 14,
+                                    fontSize: 13,
                                   ),
                                 ),
+                                const SizedBox(height: 2),
                                 Text(
-                                  'Treemina Sleep, $_userName',
+                                  _userName,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
                                     color: textColor,
                                     fontSize: 20,
