@@ -5,6 +5,7 @@ import '../providers/profile_provider.dart';
 import '../services/supabase_service.dart';
 import '../utils/app_colors.dart';
 import '../widgets/custom_button.dart';
+import '../widgets/sleep_visuals.dart';
 import 'main_page.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -136,142 +137,230 @@ class _RegisterPageState extends State<RegisterPage> {
       backgroundColor: bgColor,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const SizedBox(height: 40),
-                Container(
-                  width: 72,
-                  height: 72,
-                  decoration: BoxDecoration(
-                    color: primaryColor.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.eco_rounded, color: primaryColor, size: 38),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Buat Akun',
-                  style: TextStyle(
-                    color: textColor,
-                    fontSize: 26,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Mulai perjalanan tidurmu bersama Treemina',
-                  style: TextStyle(color: secondaryColor, fontSize: 13.5),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 40),
-                // Nama
-                TextFormField(
-                  controller: _nameCtrl,
-                  style: TextStyle(color: textColor),
-                  textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(
-                    labelText: 'Nama',
-                    prefixIcon: Icon(Icons.person_outlined),
-                  ),
-                  validator: (v) {
-                    if (v == null || v.isEmpty)
-                      return 'Nama tidak boleh kosong';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                // Email
-                TextFormField(
-                  controller: _emailCtrl,
-                  keyboardType: TextInputType.emailAddress,
-                  style: TextStyle(color: textColor),
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: Icon(Icons.email_outlined),
-                  ),
-                  validator: (v) {
-                    if (v == null || v.isEmpty)
-                      return 'Email tidak boleh kosong';
-                    if (!v.contains('@')) return 'Email tidak valid';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                // Password
-                TextFormField(
-                  controller: _passwordCtrl,
-                  obscureText: _obscurePassword,
-                  style: TextStyle(color: textColor),
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    prefixIcon: const Icon(Icons.lock_outlined),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility_off_outlined
-                            : Icons.visibility_outlined,
+                SizedBox(
+                  height: 330,
+                  width: double.infinity,
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      bottom: Radius.circular(28),
+                    ),
+                    child: NightScape(
+                      isDark: isDark,
+                      child: Stack(
+                        children: [
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                width: 88,
+                                height: 88,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(24),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(.24),
+                                      blurRadius: 20,
+                                      offset: const Offset(0, 10),
+                                    ),
+                                  ],
+                                ),
+                                clipBehavior: Clip.antiAlias,
+                                child: Image.asset(
+                                  'assets/images/app-icon.png',
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Icon(
+                                    Icons.eco_rounded,
+                                    color: isDark
+                                        ? AppColors.primaryDark
+                                        : const Color(0xFFA6DDB2),
+                                    size: 70,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Treemina\nSleep',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(.96),
+                                  fontSize: 38,
+                                  height: 1.05,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Better Sleep,\nBetter You',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(.9),
+                                  fontSize: 16,
+                                  height: 1.35,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Positioned(
+                            top: 8,
+                            left: 8,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(.10),
+                                shape: BoxShape.circle,
+                              ),
+                              child: IconButton(
+                                onPressed: () =>
+                                    Navigator.of(context).maybePop(),
+                                icon: const Icon(
+                                  Icons.arrow_back_ios_new_rounded,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      onPressed: () =>
-                          setState(() => _obscurePassword = !_obscurePassword),
                     ),
                   ),
-                  validator: (v) {
-                    if (v == null || v.isEmpty)
-                      return 'Password tidak boleh kosong';
-                    if (v.length < 6) return 'Password minimal 6 karakter';
-                    return null;
-                  },
                 ),
-                if (_errorMessage != null) ...[
-                  const SizedBox(height: 12),
-                  _MessageBox(
-                    message: _errorMessage!,
-                    color: isDark
-                        ? AppColors.badSleepDark
-                        : AppColors.badSleepLight,
-                    icon: Icons.error_outline,
-                  ),
-                ],
-                if (_successMessage != null) ...[
-                  const SizedBox(height: 12),
-                  _MessageBox(
-                    message: _successMessage!,
-                    color: primaryColor,
-                    icon: Icons.check_circle_outline,
-                  ),
-                ],
-                const SizedBox(height: 28),
-                CustomButton(
-                  label: 'Daftar',
-                  onPressed: _register,
-                  isLoading: _isLoading,
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Sudah punya akun? ',
-                      style: TextStyle(color: secondaryColor, fontSize: 14),
-                    ),
-                    GestureDetector(
-                      onTap: () => Navigator.of(context).pop(),
-                      child: Text(
-                        'Login',
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(28, 28, 28, 0),
+                  child: Column(
+                    children: [
+                      Text(
+                        'Daftar',
                         style: TextStyle(
-                          color: primaryColor,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
+                          color: textColor,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 6),
+                      Text(
+                        'Mulai perjalanan tidurmu bersama Treemina.',
+                        style: TextStyle(color: secondaryColor, fontSize: 13),
+                      ),
+                      const SizedBox(height: 24),
+                      // Nama
+                      TextFormField(
+                        controller: _nameCtrl,
+                        style: TextStyle(color: textColor),
+                        textCapitalization: TextCapitalization.words,
+                        decoration: const InputDecoration(
+                          labelText: 'Nama',
+                          prefixIcon: Icon(Icons.person_outlined),
+                        ),
+                        validator: (v) {
+                          if (v == null || v.isEmpty) {
+                            return 'Nama tidak boleh kosong';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      // Email
+                      TextFormField(
+                        controller: _emailCtrl,
+                        keyboardType: TextInputType.emailAddress,
+                        style: TextStyle(color: textColor),
+                        decoration: const InputDecoration(
+                          labelText: 'Email',
+                          prefixIcon: Icon(Icons.email_outlined),
+                        ),
+                        validator: (v) {
+                          if (v == null || v.isEmpty) {
+                            return 'Email tidak boleh kosong';
+                          }
+                          if (!v.contains('@')) return 'Email tidak valid';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      // Password
+                      TextFormField(
+                        controller: _passwordCtrl,
+                        obscureText: _obscurePassword,
+                        style: TextStyle(color: textColor),
+                        decoration: InputDecoration(
+                          labelText: 'Password',
+                          prefixIcon: const Icon(Icons.lock_outlined),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
+                            ),
+                            onPressed: () => setState(
+                              () => _obscurePassword = !_obscurePassword,
+                            ),
+                          ),
+                        ),
+                        validator: (v) {
+                          if (v == null || v.isEmpty) {
+                            return 'Password tidak boleh kosong';
+                          }
+                          if (v.length < 6) return 'Password minimal 6 karakter';
+                          return null;
+                        },
+                      ),
+                      if (_errorMessage != null) ...[
+                        const SizedBox(height: 12),
+                        _MessageBox(
+                          message: _errorMessage!,
+                          color: isDark
+                              ? AppColors.badSleepDark
+                              : AppColors.badSleepLight,
+                          icon: Icons.error_outline,
+                        ),
+                      ],
+                      if (_successMessage != null) ...[
+                        const SizedBox(height: 12),
+                        _MessageBox(
+                          message: _successMessage!,
+                          color: primaryColor,
+                          icon: Icons.check_circle_outline,
+                        ),
+                      ],
+                      const SizedBox(height: 28),
+                      CustomButton(
+                        label: 'Daftar',
+                        onPressed: _register,
+                        isLoading: _isLoading,
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Sudah punya akun? ',
+                            style: TextStyle(
+                              color: secondaryColor,
+                              fontSize: 14,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () => Navigator.of(context).pop(),
+                            child: Text(
+                              'Login',
+                              style: TextStyle(
+                                color: primaryColor,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 40),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 40),
               ],
             ),
           ),
