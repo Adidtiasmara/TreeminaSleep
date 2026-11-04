@@ -14,6 +14,7 @@ import '../widgets/custom_button.dart';
 import '../widgets/schedule_card.dart';
 import '../widgets/sleep_status_card.dart';
 import '../widgets/sleep_visuals.dart';
+import 'ai_chat_page.dart';
 import 'notifications_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -411,6 +412,20 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                             secondaryColor: secondaryColor,
                           ),
                           const SizedBox(width: 4),
+                          IconButton(
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const AiChatPage(),
+                                ),
+                              );
+                            },
+                            icon: Icon(
+                              Icons.smart_toy_outlined,
+                              color: textColor,
+                              size: 26,
+                            ),
+                          ),
                           IconButton(
                             onPressed: () {
                               Navigator.of(context).push(

@@ -241,3 +241,19 @@ on public.saved_sleep_schedules (user_id, created_at desc);
 
 create index if not exists user_music_tracks_user_created_idx
 on public.user_music_tracks (user_id, created_at desc);
+
+-- ── AI chat daily quota ──────────────────────────────────────────────────────
+create table if not exists public.chat_usage (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  usage_date date not null default current_date,
+  message_count integer not null default 0,
+  primary key (user_id, usage_date)
+);
+
+alter table public.chat_usage enable row level security;
+
+drop policy if exists "Users can read own chat usage" on public.chat_usage;
+create policy "Users can read own chat usage"
+on public.chat_usage
+for select
+using (auth.uid() = user_id);
